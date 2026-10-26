@@ -1,0 +1,43 @@
+<section class="wt-card @Class" @attributes="AdditionalAttributes">
+    @if (Title is not null || HeaderActions is not null || Header is not null)
+    {
+        <header class="wt-card-header">
+            @if (Header is not null)
+            {
+                @Header
+            }
+            else
+            {
+                <div>
+                    <h3 class="wt-card-title">@Title</h3>
+                    @if (Subtitle is not null)
+                    {
+                        <div class="wt-muted" style="font-size:.85rem">@Subtitle</div>
+                    }
+                </div>
+            }
+            @if (HeaderActions is not null)
+            {
+                <div class="wt-row">@HeaderActions</div>
+            }
+        </header>
+    }
+    <div class="wt-card-body @(Flush ? "is-flush" : null)">@ChildContent</div>
+    @if (Footer is not null)
+    {
+        <footer class="wt-card-footer">@Footer</footer>
+    }
+</section>
+
+@code {
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public RenderFragment? Header { get; set; }
+    [Parameter] public RenderFragment? HeaderActions { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? Footer { get; set; }
+    /// <summary>Bo padding phan than (dung khi chua luoi, bang).</summary>
+    [Parameter] public bool Flush { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+}

@@ -1,0 +1,33 @@
+@using Microsoft.AspNetCore.Http
+@using Microsoft.Extensions.Options
+@inject IOptions<WebTemplateOptions> Options
+
+@*
+    Dat trong <head> cua App.razor, sau <WtThemeStyles />:
+        <WtDxResources />
+    Dang ky theme DevExpress Fluent dung theo theme nguoi dung da chon (doc tu cookie) va script DevExpress.
+*@
+@DxResourceManager.RegisterTheme(InitialTheme)
+@DxResourceManager.RegisterScripts()
+<link rel="stylesheet" href="_content/WebTemplate.DevExpress/css/webtemplate-devexpress.css" />
+
+@code {
+    [CascadingParameter] private HttpContext? HttpContext { get; set; }
+
+    private ITheme InitialTheme
+    {
+        get
+        {
+            var options = Options.Value;
+            ThemeCookie.TryRead(HttpContext, out var p, out var dark);
+            if (HttpContext?.Request.Cookies.ContainsKey(ThemeCookie.Name) != true)
+            {
+                p = p with { ThemeKey = options.DefaultTheme };
+                dark = options.DefaultMode == WebTemplate.Core.Theming.ThemeMode.Dark;
+            }
+            var theme = options.Themes.FirstOrDefault(t => t.Key == p.ThemeKey && options.AllowUserThemeSelection)
+                        ?? options.Themes.First(t => t.Key == options.DefaultTheme);
+            return DxThemeFactory.Create(theme, dark);
+        }
+    }
+}

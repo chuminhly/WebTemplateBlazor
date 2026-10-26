@@ -1,0 +1,13 @@
+@inherits LayoutComponentBase
+@using Microsoft.Extensions.Options
+@inject IOptions<WebTemplateOptions> Options
+
+@*
+    Layout mac dinh, dung ngay khong can viet them:
+        @layout WebTemplate.Core.Layout.WtMainLayout
+    Can them menu tai khoan, chuong thong bao... thi tao MainLayout rieng dung <WtAppShell>.
+*@
+<WtAppShell>
+    <Footer>@Options.Value.FooterText · @Options.Value.Company.Name</Footer>
+    <ChildContent>@Body</ChildContent>
+</WtAppShell>

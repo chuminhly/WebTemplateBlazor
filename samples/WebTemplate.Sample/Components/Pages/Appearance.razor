@@ -1,0 +1,115 @@
+@page "/giao-dien"
+@using WebTemplate.Core.Theming
+@inject ThemeService Theme
+@inject ToastService Toasts
+@inject DialogService Dialogs
+@implements IDisposable
+
+@* Trang cai dat giao dien + bo suu tap component de tham khao khi lam du an moi. *@
+<div class="wt-page">
+    <WtPageHeader Title="Giao diện & component" Subtitle="Chọn màu chủ đạo, chế độ sáng/tối và xem trước các component dùng chung." />
+
+    <WtCard Title="Màu chủ đạo" Subtitle="@($"Đang dùng: {Theme.CurrentTheme.Name} · {(Theme.IsDark ? "chế độ tối" : "chế độ sáng")}")">
+        <HeaderActions>
+            <div class="wt-segmented" style="width:320px">
+                <button class="@(Theme.Current.Mode == WebTemplate.Core.Theming.ThemeMode.Light ? "is-active" : null)" @onclick="() => Theme.SetModeAsync(WebTemplate.Core.Theming.ThemeMode.Light)"><WtIcon Name="sun" Size="15" /> Sáng</button>
+                <button class="@(Theme.Current.Mode == WebTemplate.Core.Theming.ThemeMode.Dark ? "is-active" : null)" @onclick="() => Theme.SetModeAsync(WebTemplate.Core.Theming.ThemeMode.Dark)"><WtIcon Name="moon" Size="15" /> Tối</button>
+                <button class="@(Theme.Current.Mode == WebTemplate.Core.Theming.ThemeMode.System ? "is-active" : null)" @onclick="() => Theme.SetModeAsync(WebTemplate.Core.Theming.ThemeMode.System)"><WtIcon Name="monitor" Size="15" /> Theo máy</button>
+            </div>
+        </HeaderActions>
+        <ChildContent>
+            <WtThemePicker />
+        </ChildContent>
+    </WtCard>
+
+    <div class="wt-grid wt-cols-2">
+        <WtCard Title="Nút bấm">
+            <div class="wt-row">
+                <WtButton Variant="primary" Icon="plus" Text="Thêm mới" />
+                <WtButton Icon="edit" Text="Sửa" />
+                <WtButton Variant="ghost" Icon="refresh" Text="Làm mới" />
+                <WtButton Variant="danger" Icon="trash" Text="Xóa" />
+                <WtButton Variant="primary" Text="Đang lưu" Loading="true" />
+                <WtButton Icon="settings" Title="Chỉ có icon" />
+            </div>
+        </WtCard>
+        <WtCard Title="Nhãn trạng thái">
+            <div class="wt-row">
+                <WtStatusBadge Text="Mới" Tone="primary" />
+                <WtStatusBadge Text="Hoàn thành" Tone="success" />
+                <WtStatusBadge Text="Chờ duyệt" Tone="warning" />
+                <WtStatusBadge Text="Đã hủy" Tone="danger" />
+                <WtStatusBadge Text="Thông tin" Tone="info" />
+                <WtStatusBadge Text="Nháp" />
+            </div>
+        </WtCard>
+        <WtCard Title="Thông báo & hộp thoại">
+            <div class="wt-row">
+                <WtButton Text="Thành công" OnClick="@(() => Toasts.Success("Đã lưu", "Dữ liệu đã được cập nhật."))" />
+                <WtButton Text="Cảnh báo" OnClick="@(() => Toasts.Warning("Sắp hết hạn", "Hợp đồng còn 5 ngày."))" />
+                <WtButton Text="Lỗi" OnClick="@(() => Toasts.Error("Không kết nối được", "Vui lòng thử lại sau."))" />
+                <WtButton Variant="primary" Text="Hộp thoại xác nhận" OnClick="ConfirmAsync" />
+                <WtButton Text="Popup nội dung" OnClick="() => _modal = true" />
+            </div>
+        </WtCard>
+        <WtCard Title="Trạng thái tải / rỗng">
+            <div class="wt-grid wt-cols-2">
+                <div><WtSkeleton Lines="4" /></div>
+                <WtLoading Text="Đang tải dữ liệu..." />
+            </div>
+        </WtCard>
+    </div>
+
+    <div class="wt-grid wt-cols-4">
+        <WtStatCard Label="Doanh thu" Value="1,2 tỷ" Icon="dollar" Change="12.4m" />
+        <WtStatCard Label="Đơn hàng" Value="356" Icon="cart" Change="-3.1m" />
+        <WtStatCard Label="Khách hàng mới" Value="48" Icon="users" Change="8m" />
+        <WtStatCard Label="Tỷ lệ hoàn thành" Value="94%" Icon="check-circle" />
+    </div>
+
+    <WtCard Title="Trang rỗng">
+        <WtEmptyState Title="Chưa có khách hàng nào" Description="Bắt đầu bằng cách thêm khách hàng đầu tiên.">
+            <WtButton Variant="primary" Icon="plus" Text="Thêm khách hàng" Href="khach-hang" />
+        </WtEmptyState>
+    </WtCard>
+
+    <WtCard Title="Bộ icon có sẵn" Subtitle="Dùng: &lt;WtIcon Name=&quot;tên&quot; /&gt;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px">
+            @foreach (var name in WtIcons.Names.Order())
+            {
+                <div class="wt-row" style="flex-direction:column;gap:6px;padding:10px;border:1px solid var(--wt-border);border-radius:8px">
+                    <WtIcon Name="@name" Size="20" />
+                    <small class="wt-muted">@name</small>
+                </div>
+            }
+        </div>
+    </WtCard>
+</div>
+
+<WtModal @bind-Visible="_modal" Title="Popup nội dung" Wide="true">
+    <ChildContent>
+        <p>WtModal chứa nội dung bất kỳ: form, chi tiết bản ghi, hướng dẫn...</p>
+    </ChildContent>
+    <Footer>
+        <WtButton Text="Đóng" OnClick="() => _modal = false" />
+        <WtButton Variant="primary" Text="Đồng ý" OnClick="() => _modal = false" />
+    </Footer>
+</WtModal>
+
+@code {
+    private bool _modal;
+
+    private async Task ConfirmAsync()
+    {
+        if (await Dialogs.ConfirmDeleteAsync("bản ghi mẫu"))
+        {
+            Toasts.Success("Đã xóa bản ghi mẫu");
+        }
+    }
+
+    protected override void OnInitialized() => Theme.Changed += OnChanged;
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Theme.Changed -= OnChanged;
+}

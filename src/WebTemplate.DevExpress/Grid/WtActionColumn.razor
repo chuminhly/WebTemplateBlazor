@@ -1,0 +1,36 @@
+@typeparam TItem
+@inject WtText T
+
+@* Cot nut thao tac tren tung dong: Xem / Sua / Xoa. Dat trong <Columns> cua WtGrid. *@
+<DxGridCommandColumn Width="@Width" FixedPosition="GridColumnFixedPosition.Right" Caption=" ">
+    <CellDisplayTemplate>
+        @if (context.DataItem is TItem item)
+        {
+            <div class="wt-row" style="flex-wrap:nowrap;gap:2px;justify-content:center">
+                @if (OnView.HasDelegate)
+                {
+                    <WtButton Variant="ghost" Small="true" Icon="eye" Title="Xem" OnClick="() => OnView.InvokeAsync(item)" />
+                }
+                @if (ShowEdit)
+                {
+                    <WtButton Variant="ghost" Small="true" Icon="edit" Title="@T["Edit"]" OnClick="() => Grid!.EditAsync(item)" />
+                }
+                @if (ShowDelete)
+                {
+                    <WtButton Variant="ghost" Small="true" Icon="trash" Title="@T["Delete"]" OnClick="() => Grid!.DeleteAsync([item])" />
+                }
+                @ChildContent?.Invoke(item)
+            </div>
+        }
+    </CellDisplayTemplate>
+</DxGridCommandColumn>
+
+@code {
+    [CascadingParameter] private WtGrid<TItem>? Grid { get; set; }
+    [Parameter] public string Width { get; set; } = "120px";
+    [Parameter] public bool ShowEdit { get; set; } = true;
+    [Parameter] public bool ShowDelete { get; set; } = true;
+    [Parameter] public EventCallback<TItem> OnView { get; set; }
+    /// <summary>Nut them cho tung dong.</summary>
+    [Parameter] public RenderFragment<TItem>? ChildContent { get; set; }
+}

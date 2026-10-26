@@ -1,0 +1,12 @@
+@* Icon SVG theo ten, an theo mau chu hien tai (currentColor). *@
+<svg class="wt-icon @Class" width="@Size" height="@Size" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+     stroke-width="@StrokeWidth" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+    @((MarkupString)(WtIcons.Get(Name) ?? WtIcons.Get("help")!))
+</svg>
+
+@code {
+    [Parameter, EditorRequired] public string Name { get; set; } = "";
+    [Parameter] public int Size { get; set; } = 18;
+    [Parameter] public double StrokeWidth { get; set; } = 2;
+    [Parameter] public string? Class { get; set; }
+}

@@ -1,0 +1,44 @@
+@* Tab don gian: <WtTabs><WtTab Title="Thong tin">...</WtTab><WtTab Title="Lich su">...</WtTab></WtTabs> *@
+<CascadingValue Value="this" IsFixed="true">
+    <div class="wt-tabs" role="tablist">
+        @foreach (var tab in _tabs)
+        {
+            <button role="tab" class="wt-tab @(tab == Active ? "is-active" : null)" aria-selected="@(tab == Active)" @onclick="() => Select(tab)">
+                @if (tab.Icon is not null)
+                {
+                    <WtIcon Name="@tab.Icon" Size="15" />
+                }
+                @tab.Title
+                @if (tab.Badge is not null)
+                {
+                    <span class="wt-badge is-plain" style="margin-left:6px;padding:0 8px">@tab.Badge</span>
+                }
+            </button>
+        }
+    </div>
+    @ChildContent
+</CascadingValue>
+
+@code {
+    private readonly List<WtTab> _tabs = [];
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public int ActiveIndex { get; set; }
+    [Parameter] public EventCallback<int> ActiveIndexChanged { get; set; }
+
+    internal WtTab? Active => _tabs.Count == 0 ? null : _tabs[Math.Clamp(ActiveIndex, 0, _tabs.Count - 1)];
+
+    internal void Register(WtTab tab)
+    {
+        _tabs.Add(tab);
+        StateHasChanged();
+    }
+
+    internal void Unregister(WtTab tab) => _tabs.Remove(tab);
+
+    private async Task Select(WtTab tab)
+    {
+        ActiveIndex = _tabs.IndexOf(tab);
+        await ActiveIndexChanged.InvokeAsync(ActiveIndex);
+    }
+}

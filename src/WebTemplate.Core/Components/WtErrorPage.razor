@@ -1,0 +1,29 @@
+@inject WtText T
+
+@* Trang loi 404 / 403 / 500. Dung trong trang NotFound cua app: <WtErrorPage Code="404" /> *@
+<div class="wt-error-page">
+    <div class="wt-error-code">@Code</div>
+    <div class="wt-error-title">@(Title ?? T[$"Error{Key}Title"])</div>
+    <p class="wt-muted" style="max-width:480px">@(Message ?? T[$"Error{Key}Text"])</p>
+    @if (Detail is not null)
+    {
+        <code class="wt-subtle" style="font-size:.8rem;max-width:640px">@Detail</code>
+    }
+    <div class="wt-row" style="justify-content:center;margin-top:8px">
+        @if (OnRetry.HasDelegate)
+        {
+            <WtButton Icon="refresh" Text="@T["Retry"]" OnClick="OnRetry" />
+        }
+        <WtButton Variant="primary" Icon="home" Text="@T["GoHome"]" Href="" />
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Code { get; set; } = 404;
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Message { get; set; }
+    [Parameter] public string? Detail { get; set; }
+    [Parameter] public EventCallback OnRetry { get; set; }
+
+    private string Key => Code is 403 or 404 ? Code.ToString() : "500";
+}

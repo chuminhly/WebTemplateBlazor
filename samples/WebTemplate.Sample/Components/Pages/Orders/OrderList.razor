@@ -1,0 +1,63 @@
+@page "/don-hang"
+@inject SampleDataService Data
+@inject NavigationManager Nav
+
+@* Vi du WtMasterDetailPage: chon don hang o bang tren, xem cac dong hang o bang duoi. *@
+<WtMasterDetailPage Title="Đơn hàng" Subtitle="@($"{_orders.Count} đơn hàng trong 12 tháng")"
+                    MasterTitle="Danh sách đơn hàng" DetailTitle="@(_selected is null ? "Chi tiết đơn hàng" : $"Chi tiết đơn {_selected.Code} · {_selected.CustomerName}")"
+                    HasSelection="_selected is not null">
+    <Actions>
+        <WtButton Variant="primary" Icon="plus" Text="Tạo đơn hàng" Href="don-hang/tao-moi" />
+    </Actions>
+    <Master>
+        <WtGrid TItem="Order" Data="_orders" KeyFieldName="Id" LayoutKey="orders" ExportFileName="don-hang" ShowGroupPanel="true" PageSize="10"
+                OnAdd="@(() => Nav.NavigateTo("don-hang/tao-moi"))" OnEdit="@(o => Nav.NavigateTo($"don-hang/{o.Id}/sua"))"
+                OnDelete="OnDelete" OnRefresh="Reload" FocusedItemChanged="o => _selected = o">
+            <Columns>
+                <DxGridDataColumn FieldName="Code" Caption="Mã đơn" Width="140px" />
+                <WtDateColumn FieldName="OrderDate" Caption="Ngày đặt" />
+                <DxGridDataColumn FieldName="CustomerName" Caption="Khách hàng" MinWidth="200" />
+                <DxGridDataColumn FieldName="City" Caption="Tỉnh/thành" Width="150px" />
+                <WtStatusColumn FieldName="Status" Caption="Trạng thái" Tones="SampleDataService.OrderStatusTones" />
+                <WtMoneyColumn FieldName="Total" Caption="Giá trị" Width="150px" />
+            </Columns>
+            <TotalSummary>
+                <DxGridSummaryItem SummaryType="GridSummaryItemType.Count" FieldName="Code" />
+                <DxGridSummaryItem SummaryType="GridSummaryItemType.Sum" FieldName="Total" ValueDisplayFormat="#,##0 ₫" />
+            </TotalSummary>
+            <GroupSummary>
+                <DxGridSummaryItem SummaryType="GridSummaryItemType.Sum" FieldName="Total" ValueDisplayFormat="#,##0 ₫" />
+            </GroupSummary>
+        </WtGrid>
+    </Master>
+    <Detail>
+        <WtGrid TItem="OrderLine" Data="_selected?.Lines" ShowToolbar="false" ShowSearchBox="false" AllowSelection="false" PageSize="10">
+            <Columns>
+                <DxGridDataColumn FieldName="ProductName" Caption="Sản phẩm" />
+                <DxGridDataColumn FieldName="Unit" Caption="ĐVT" Width="90px" />
+                <DxGridDataColumn FieldName="Quantity" Caption="Số lượng" Width="110px" DisplayFormat="#,##0" />
+                <WtMoneyColumn FieldName="UnitPrice" Caption="Đơn giá" />
+                <WtMoneyColumn FieldName="Amount" Caption="Thành tiền" />
+            </Columns>
+            <TotalSummary>
+                <DxGridSummaryItem SummaryType="GridSummaryItemType.Sum" FieldName="Amount" ValueDisplayFormat="#,##0 ₫" />
+            </TotalSummary>
+        </WtGrid>
+    </Detail>
+</WtMasterDetailPage>
+
+@code {
+    private IReadOnlyList<Order> _orders = [];
+    private Order? _selected;
+
+    protected override void OnInitialized() => Reload();
+
+    private void Reload() => _orders = Data.GetOrders();
+
+    private void OnDelete(IReadOnlyList<Order> items)
+    {
+        Data.DeleteOrders(items.Select(o => o.Id));
+        _selected = null;
+        Reload();
+    }
+}

@@ -1,0 +1,56 @@
+@inject WtText T
+
+@* Menu tai khoan goc phai. Truyen ten, chuc danh va cac muc menu qua ChildContent. *@
+<div class="wt-popover-anchor">
+    <button class="wt-btn wt-btn-ghost" style="padding:0 6px" aria-haspopup="true" aria-expanded="@_open" @onclick="() => _open = !_open">
+        <span class="wt-avatar">@Initials</span>
+        <span class="wt-user-label">
+            <span style="font-weight:600">@UserName</span>
+            @if (!string.IsNullOrEmpty(Role))
+            {
+                <small class="wt-muted">@Role</small>
+            }
+        </span>
+        <WtIcon Name="chevron-down" Size="14" Class="wt-only-desktop" />
+    </button>
+    @if (_open)
+    {
+        <div class="wt-popover-scrim" @onclick="() => _open = false"></div>
+        <div class="wt-popover" @onclick="() => _open = false">
+            @ChildContent
+            @if (!string.IsNullOrEmpty(LogoutHref))
+            {
+                @if (ChildContent is not null)
+                {
+                    <div class="wt-menu-divider"></div>
+                }
+                <a class="wt-menu-item" href="@LogoutHref"><WtIcon Name="logout" Size="16" /> @T["Logout"]</a>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private bool _open;
+
+    [Parameter] public string UserName { get; set; } = "";
+    [Parameter] public string? Role { get; set; }
+    [Parameter] public string? LogoutHref { get; set; }
+
+    /// <summary>Cac muc menu, vd <c>&lt;a class="wt-menu-item" href="/profile"&gt;...&lt;/a&gt;</c>.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private string Initials
+    {
+        get
+        {
+            var parts = UserName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            return parts.Length switch
+            {
+                0 => "?",
+                1 => parts[0][..1].ToUpperInvariant(),
+                _ => (parts[^2][..1] + parts[^1][..1]).ToUpperInvariant(),
+            };
+        }
+    }
+}

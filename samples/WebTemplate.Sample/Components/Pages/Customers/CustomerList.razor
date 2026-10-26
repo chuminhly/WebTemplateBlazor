@@ -1,0 +1,132 @@
+@page "/khach-hang"
+@inject SampleDataService Data
+@inject NavigationManager Nav
+
+@* Vi du WtListPage + WtGrid: loc, them/sua bang popup, xoa nhieu dong, panel chi tiet ben phai. *@
+<WtListPage Title="Khách hàng" Subtitle="@($"{_customers.Count} khách hàng")"
+            ShowDetail="_focused is not null" DetailTitle="@_focused?.Name" OnCloseDetail="() => _focused = null">
+    <Actions>
+        <WtButton Icon="file" Text="In danh sách" Href="bao-cao/khach-hang" />
+    </Actions>
+    <Filters>
+        <WtField Label="Tỉnh/thành">
+            <DxComboBox Data="SampleDataService.Cities" @bind-Value="_city" @bind-Value:after="ApplyFilter" ClearButtonDisplayMode="DataEditorClearButtonDisplayMode.Auto" NullText="Tất cả" />
+        </WtField>
+        <WtField Label="Trạng thái">
+            <DxComboBox Data="SampleDataService.CustomerStatuses" @bind-Value="_status" @bind-Value:after="ApplyFilter" ClearButtonDisplayMode="DataEditorClearButtonDisplayMode.Auto" NullText="Tất cả" />
+        </WtField>
+        <WtField Label="Nhóm khách hàng">
+            <DxComboBox Data="SampleDataService.Segments" @bind-Value="_segment" @bind-Value:after="ApplyFilter" ClearButtonDisplayMode="DataEditorClearButtonDisplayMode.Auto" NullText="Tất cả" />
+        </WtField>
+    </Filters>
+    <ChildContent>
+        <WtGrid TItem="Customer" Data="_filtered" KeyFieldName="Id" LayoutKey="customers" ExportFileName="khach-hang"
+                PopupTitle="Thông tin khách hàng"
+                CustomizeEditModel="OnCustomizeEditModel" OnEditModelSaving="OnSaving" EditFormTemplate="EditForm"
+                OnDelete="OnDelete" OnRefresh="Reload" FocusedItemChanged="c => _focused = c">
+            <Columns>
+                <DxGridDataColumn FieldName="Code" Caption="Mã KH" Width="100px" />
+                <DxGridDataColumn FieldName="Name" Caption="Tên khách hàng" MinWidth="200">
+                    <CellDisplayTemplate>
+                        <a href="@($"khach-hang/{((Customer)context.DataItem).Id}")">@context.DisplayText</a>
+                    </CellDisplayTemplate>
+                </DxGridDataColumn>
+                <DxGridDataColumn FieldName="City" Caption="Tỉnh/thành" Width="150px" />
+                <DxGridDataColumn FieldName="Segment" Caption="Nhóm" Width="130px" />
+                <DxGridDataColumn FieldName="Phone" Caption="Điện thoại" Width="130px" />
+                <WtStatusColumn FieldName="Status" Caption="Trạng thái" Tones="SampleDataService.CustomerStatusTones" />
+                <WtMoneyColumn FieldName="Revenue" Caption="Doanh thu" Width="150px" />
+                <WtDateColumn FieldName="CreatedAt" Caption="Ngày tạo" Visible="false" />
+                <WtActionColumn TItem="Customer" OnView="@(c => Nav.NavigateTo($"khach-hang/{c.Id}"))" />
+            </Columns>
+            <TotalSummary>
+                <DxGridSummaryItem SummaryType="GridSummaryItemType.Count" FieldName="Name" />
+                <DxGridSummaryItem SummaryType="GridSummaryItemType.Sum" FieldName="Revenue" ValueDisplayFormat="#,##0 ₫" />
+            </TotalSummary>
+        </WtGrid>
+    </ChildContent>
+    <DetailPanel>
+        @if (_focused is { } c)
+        {
+            <div class="wt-stack" style="gap:14px">
+                <div class="wt-row"><WtStatusBadge Text="@c.Status" Tone="@SampleDataService.CustomerStatusTones[c.Status]" /><WtStatusBadge Text="@c.Segment" Dot="false" /></div>
+                <WtProp Label="Mã khách hàng" Value="@c.Code" />
+                <WtProp Label="Điện thoại" Value="@c.Phone" />
+                <WtProp Label="Email" Value="@c.Email" />
+                <WtProp Label="Tỉnh/thành" Value="@c.City" />
+                <WtProp Label="Doanh thu" Value="@WtFormat.Money(c.Revenue)" />
+                <WtButton Variant="primary" Icon="eye" Text="Xem hồ sơ đầy đủ" Href="@($"khach-hang/{c.Id}")" />
+            </div>
+        }
+    </DetailPanel>
+</WtListPage>
+
+@code {
+    private IReadOnlyList<Customer> _customers = [];
+    private Customer? _focused;
+    private string? _city, _status, _segment;
+
+    private IReadOnlyList<Customer> _filtered = [];
+
+    protected override void OnInitialized() => Reload();
+
+    private void Reload()
+    {
+        _customers = Data.GetCustomers();
+        ApplyFilter();
+    }
+
+    // Loc ra danh sach moi chi khi doi bo loc: truyen IEnumerable tao moi moi lan render se lam luoi nap lai lien tuc.
+    private void ApplyFilter() => _filtered = _customers
+        .Where(c => _city is null || c.City == _city)
+        .Where(c => _status is null || c.Status == _status)
+        .Where(c => _segment is null || c.Segment == _segment)
+        .ToList();
+
+    private RenderFragment<GridEditFormTemplateContext> EditForm => ctx =>
+    {
+        var c = (Customer)ctx.EditModel;
+        return @<DxFormLayout CaptionPosition="CaptionPosition.Vertical">
+            <DxFormLayoutItem Caption="Mã khách hàng" ColSpanMd="4"><DxTextBox @bind-Text="c.Code" /></DxFormLayoutItem>
+            <DxFormLayoutItem Caption="Tên khách hàng" ColSpanMd="8"><DxTextBox @bind-Text="c.Name" /></DxFormLayoutItem>
+            <DxFormLayoutItem Caption="Tỉnh/thành" ColSpanMd="6"><DxComboBox Data="SampleDataService.Cities" @bind-Value="c.City" /></DxFormLayoutItem>
+            <DxFormLayoutItem Caption="Nhóm" ColSpanMd="6"><DxComboBox Data="SampleDataService.Segments" @bind-Value="c.Segment" /></DxFormLayoutItem>
+            <DxFormLayoutItem Caption="Điện thoại" ColSpanMd="6"><DxTextBox @bind-Text="c.Phone" /></DxFormLayoutItem>
+            <DxFormLayoutItem Caption="Email" ColSpanMd="6"><DxTextBox @bind-Text="c.Email" /></DxFormLayoutItem>
+            <DxFormLayoutItem Caption="Trạng thái" ColSpanMd="6"><DxComboBox Data="SampleDataService.CustomerStatuses" @bind-Value="c.Status" /></DxFormLayoutItem>
+            <DxFormLayoutItem Caption="Ghi chú" ColSpanMd="12"><DxMemo @bind-Text="c.Note" Rows="3" /></DxFormLayoutItem>
+        </DxFormLayout>;
+    };
+
+    private void OnCustomizeEditModel(GridCustomizeEditModelEventArgs e)
+    {
+        if (e.IsNew)
+        {
+            e.EditModel = new Customer { Code = $"KH{_customers.Max(c => c.Id) + 1:0000}", Status = "Tiềm năng" };
+        }
+    }
+
+    private void OnSaving(GridEditModelSavingEventArgs e)
+    {
+        var model = (Customer)e.EditModel;
+        if (!e.IsNew)
+        {
+            var original = (Customer)e.DataItem;
+            model.Id = original.Id;
+            model.Revenue = original.Revenue;
+            model.CreatedAt = original.CreatedAt;
+        }
+        Data.SaveCustomer(model);
+        Reload();
+    }
+
+    private void OnDelete(IReadOnlyList<Customer> items)
+    {
+        Data.DeleteCustomers(items.Select(c => c.Id));
+        if (_focused is not null && items.Contains(_focused))
+        {
+            _focused = null;
+        }
+        Reload();
+    }
+}

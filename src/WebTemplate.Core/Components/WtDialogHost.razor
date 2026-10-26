@@ -1,0 +1,47 @@
+@implements IDisposable
+@inject DialogService Dialogs
+@inject WtText T
+
+@if (Dialogs.Current is { } d)
+{
+    <div class="wt-modal-backdrop" @onclick="() => Dialogs.Close(false)" @onkeydown="OnKey">
+        <div class="wt-modal" role="alertdialog" aria-modal="true" aria-labelledby="wt-dialog-title" @onclick:stopPropagation>
+            <div class="wt-modal-header">
+                <div class="wt-modal-icon @(d.Kind == DialogKind.Danger ? "is-danger" : null)">
+                    <WtIcon Name="@(d.Kind switch { DialogKind.Danger => "trash", DialogKind.Info => "info", _ => "help" })" />
+                </div>
+                <h2 class="wt-modal-title" id="wt-dialog-title">@d.Title</h2>
+            </div>
+            <div class="wt-modal-body">
+                @if (d.Message is not null)
+                {
+                    <p>@d.Message</p>
+                }
+                @d.Body
+            </div>
+            <div class="wt-modal-footer">
+                @if (d.ShowCancel)
+                {
+                    <WtButton Text="@(d.CancelText ?? T["Cancel"])" OnClick="() => Dialogs.Close(false)" />
+                }
+                <WtButton Variant="@(d.Kind == DialogKind.Danger ? "danger" : "primary")" Text="@(d.OkText ?? T["Ok"])" OnClick="() => Dialogs.Close(true)" autofocus />
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private void OnKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            Dialogs.Close(false);
+        }
+    }
+
+    protected override void OnInitialized() => Dialogs.Changed += OnChanged;
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Dialogs.Changed -= OnChanged;
+}

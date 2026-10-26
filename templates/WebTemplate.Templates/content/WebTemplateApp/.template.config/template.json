@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "chuminhly",
+  "classifications": [ "Web", "Blazor", "DevExpress" ],
+  "identity": "WebTemplate.BlazorApp",
+  "name": "WebTemplate Blazor App (DevExpress)",
+  "description": "Ung dung Blazor .NET 10 dung bo template chung: layout, menu, 10 theme mau, luoi va report DevExpress.",
+  "shortName": "webtemplate-app",
+  "sourceName": "WebTemplateApp",
+  "preferNameDirectory": true,
+  "tags": { "language": "C#", "type": "project" },
+  "symbols": {
+    "AppTitle": {
+      "type": "parameter",
+      "datatype": "text",
+      "description": "Ten ung dung hien tren thanh menu",
+      "defaultValue": "Ứng dụng mới",
+      "replaces": "__APP_TITLE__"
+    },
+    "Company": {
+      "type": "parameter",
+      "datatype": "text",
+      "description": "Ten cong ty (in tren bao cao)",
+      "defaultValue": "Công ty của bạn",
+      "replaces": "__COMPANY__"
+    },
+    "Theme": {
+      "type": "parameter",
+      "datatype": "choice",
+      "description": "Theme mau mac dinh",
+      "defaultValue": "ocean",
+      "replaces": "__THEME__",
+      "choices": [
+        { "choice": "ocean", "description": "Xanh duong" },
+        { "choice": "emerald", "description": "Xanh luc bao" },
+        { "choice": "purple", "description": "Tim" },
+        { "choice": "sunset", "description": "Cam" },
+        { "choice": "crimson", "description": "Do do" },
+        { "choice": "teal", "description": "Xanh ngoc" },
+        { "choice": "indigo", "description": "Cham" },
+        { "choice": "rose", "description": "Hong" },
+        { "choice": "amber", "description": "Vang ho phach" },
+        { "choice": "slate", "description": "Xam than" }
+      ]
+    },
+    "LibVersion": {
+      "type": "parameter",
+      "datatype": "text",
+      "description": "Phien ban goi WebTemplate.Core / WebTemplate.DevExpress",
+      "defaultValue": "1.0.0",
+      "replaces": "__LIB_VERSION__"
+    }
+  },
+  "primaryOutputs": [ { "path": "WebTemplateApp.csproj" } ],
+  "postActions": [
+    {
+      "description": "Restore NuGet packages",
+      "manualInstructions": [ { "text": "Run 'dotnet restore'" } ],
+      "actionId": "210D431B-A78B-4D2F-B762-4ED3E3EA9025",
+      "continueOnError": true
+    }
+  ]
+}

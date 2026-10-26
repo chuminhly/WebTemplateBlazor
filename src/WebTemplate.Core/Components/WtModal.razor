@@ -1,0 +1,34 @@
+@inject WtText T
+
+@* Popup chua noi dung tuy y (form, chi tiet). Dieu khien bang @bind-Visible. *@
+@if (Visible)
+{
+    <div class="wt-modal-backdrop" @onclick="Close">
+        <div class="wt-modal @(Wide ? "is-wide" : null)" role="dialog" aria-modal="true" @onclick:stopPropagation>
+            <div class="wt-modal-header">
+                <h2 class="wt-modal-title">@Title</h2>
+                <button class="wt-btn wt-btn-ghost wt-btn-icon wt-btn-sm" title="@T["Close"]" @onclick="Close"><WtIcon Name="x" Size="16" /></button>
+            </div>
+            <div class="wt-modal-body" style="color:inherit">@ChildContent</div>
+            @if (Footer is not null)
+            {
+                <div class="wt-modal-footer">@Footer</div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public EventCallback<bool> VisibleChanged { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public bool Wide { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? Footer { get; set; }
+
+    public async Task Close()
+    {
+        Visible = false;
+        await VisibleChanged.InvokeAsync(false);
+    }
+}

@@ -1,0 +1,8 @@
+/* CSS rieng cua app. Giao dien chung nam o _content/WebTemplate.Core/css/webtemplate.css */
+
+#blazor-error-ui {
+    display: none;
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 2000;
+    padding: .6rem 1.25rem; background: #fef3c7; color: #78350f;
+}
+#blazor-error-ui .dismiss { cursor: pointer; position: absolute; right: .75rem; top: .5rem; }

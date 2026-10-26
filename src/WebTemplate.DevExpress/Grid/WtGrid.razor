@@ -1,0 +1,350 @@
+@typeparam TItem
+@inject ThemeService Theme
+@inject DialogService Dialogs
+@inject ToastService Toasts
+@inject WebTemplateJsInterop Js
+@inject WtText T
+@implements IDisposable
+
+@*
+    Luoi DevExpress cau hinh san theo chuan WebTemplate:
+    phan trang, sap xep, loc, tim kiem, chon nhieu dong, thanh cong cu Them/Sua/Xoa/Lam moi/Xuat file/Chon cot,
+    ghi nho bo cuc theo nguoi dung, tu doi kich thuoc theo mat do giao dien.
+
+    <WtGrid TItem="Customer" Data="customers" KeyFieldName="Id" LayoutKey="customers"
+            EditFormTemplate="..." OnEditModelSaving="Save" OnDelete="Delete">
+        <Columns>
+            <DxGridDataColumn FieldName="Name" Caption="Ten khach hang" />
+            <WtMoneyColumn FieldName="Revenue" Caption="Doanh thu" />
+        </Columns>
+    </WtGrid>
+*@
+<CascadingValue Value="this" IsFixed="true">
+    <DxGrid @ref="Grid" @key="_gridKey"
+            Data="Data"
+            KeyFieldName="@KeyFieldName"
+            CssClass="@($"wt-dx-grid {CssClass}")"
+            SizeMode="@(Theme.Current.Density == UiDensity.Compact ? SizeMode.Small : SizeMode.Medium)"
+            PageSize="PageSize"
+            PagerVisible="@(!VirtualScroll)"
+            PageSizeSelectorVisible="true"
+            PageSizeSelectorItems="PageSizes"
+            VirtualScrollingEnabled="VirtualScroll"
+            ShowSearchBox="@(ShowSearchBox && !ShowToolbar)"
+            SearchBoxNullText="@T["Search"]"
+            SearchText="@_searchText"
+            ShowGroupPanel="ShowGroupPanel"
+            ShowFilterRow="ShowFilterRow"
+            FilterMenuButtonDisplayMode="GridFilterMenuButtonDisplayMode.Always"
+            ColumnResizeMode="GridColumnResizeMode.NextColumn"
+            AllowColumnReorder="true"
+            HighlightRowOnHover="true"
+            ContextMenus="GridContextMenus.All"
+            SelectionMode="@(AllowSelection ? GridSelectionMode.Multiple : GridSelectionMode.Single)"
+            AllowSelectRowByClick="false"
+            SelectedDataItems="_selected"
+            SelectedDataItemsChanged="OnSelectedChanged"
+            FocusedRowEnabled="FocusedRowEnabled"
+            FocusedRowChanged="OnFocusedRowChanged"
+            RowDoubleClick="OnRowDoubleClick"
+            EditMode="EditMode"
+            EditFormTemplate="EditFormTemplate"
+            EditModelSaving="HandleEditModelSaving"
+            CustomizeEditModel="CustomizeEditModel"
+            PopupEditFormHeaderText="@PopupTitle"
+            PopupEditFormCssClass="wt-grid-popup"
+            LayoutAutoLoading="OnLayoutLoading"
+            LayoutAutoSaving="OnLayoutSaving"
+            TotalSummary="TotalSummary"
+            GroupSummary="GroupSummary"
+            DetailRowTemplate="DetailRowTemplate"
+            ToolbarTemplate="@(ShowToolbar ? Toolbar : null)"
+            style="@(Height is null ? null : $"height:{Height}")">
+        <Columns>
+            @if (AllowSelection)
+            {
+                <DxGridSelectionColumn Width="44px" FixedPosition="GridColumnFixedPosition.Left" />
+            }
+            @Columns
+        </Columns>
+    </DxGrid>
+</CascadingValue>
+
+@code {
+    private Guid _gridKey = Guid.NewGuid();
+    private bool _skipLayoutLoad;
+    private IReadOnlyList<object> _selected = [];
+    private TItem? _focused;
+    private bool _exportOpen;
+    private string? _searchText;
+
+    /// <summary>Doi tuong DxGrid ben trong, dung khi can goi API DevExpress truc tiep.</summary>
+    public DxGrid Grid { get; private set; } = default!;
+
+    /// <summary>Danh sach, IQueryable, hoac data source DevExpress (GridDevExtremeDataSource) cho du lieu lon.</summary>
+    [Parameter] public object? Data { get; set; }
+    [Parameter] public RenderFragment? Columns { get; set; }
+    [Parameter] public string? KeyFieldName { get; set; }
+
+    /// <summary>Ten hien tren thanh cong cu (tuy chon).</summary>
+    [Parameter] public string? Title { get; set; }
+
+    /// <summary>Dat ten de ghi nho bo cuc (thu tu, do rong, cot an, bo loc) trong trinh duyet cua nguoi dung.</summary>
+    [Parameter] public string? LayoutKey { get; set; }
+
+    [Parameter] public string ExportFileName { get; set; } = "du-lieu";
+    [Parameter] public int PageSize { get; set; } = 20;
+    [Parameter] public int[] PageSizes { get; set; } = [10, 20, 50, 100];
+    [Parameter] public bool VirtualScroll { get; set; }
+    [Parameter] public bool ShowSearchBox { get; set; } = true;
+    [Parameter] public bool ShowGroupPanel { get; set; }
+    [Parameter] public bool ShowFilterRow { get; set; }
+    [Parameter] public bool ShowToolbar { get; set; } = true;
+    [Parameter] public bool AllowSelection { get; set; } = true;
+    [Parameter] public bool AllowExport { get; set; } = true;
+    /// <summary>Tu dong chon (to dam) dong dau tien va dong dang bam.</summary>
+    [Parameter] public bool FocusedRowEnabled { get; set; } = true;
+    [Parameter] public string? Height { get; set; }
+    [Parameter] public string? CssClass { get; set; }
+
+    /// <summary>An/hien nut theo quyen. Null = tu quyet dinh dua tren callback da gan.</summary>
+    [Parameter] public bool? AllowAdd { get; set; }
+    [Parameter] public bool? AllowEdit { get; set; }
+    [Parameter] public bool? AllowDelete { get; set; }
+
+    // ---- Sua du lieu ngay tren luoi (popup form cua DevExpress) ----
+    [Parameter] public GridEditMode EditMode { get; set; } = GridEditMode.PopupEditForm;
+    [Parameter] public RenderFragment<GridEditFormTemplateContext>? EditFormTemplate { get; set; }
+    [Parameter] public EventCallback<GridEditModelSavingEventArgs> OnEditModelSaving { get; set; }
+    [Parameter] public EventCallback<GridCustomizeEditModelEventArgs> CustomizeEditModel { get; set; }
+    [Parameter] public string? PopupTitle { get; set; }
+
+    // ---- Hoac chuyen sang trang rieng ----
+    /// <summary>Bam "Them moi": goi callback nay thay vi mo popup (vd chuyen sang trang form).</summary>
+    [Parameter] public EventCallback OnAdd { get; set; }
+    /// <summary>Bam "Sua"/nhap dup dong: goi callback nay thay vi mo popup.</summary>
+    [Parameter] public EventCallback<TItem> OnEdit { get; set; }
+    /// <summary>Xoa cac dong da chon (hoac dong dang chon) sau khi nguoi dung xac nhan.</summary>
+    [Parameter] public EventCallback<IReadOnlyList<TItem>> OnDelete { get; set; }
+    [Parameter] public EventCallback OnRefresh { get; set; }
+
+    [Parameter] public EventCallback<TItem?> FocusedItemChanged { get; set; }
+    [Parameter] public EventCallback<IReadOnlyList<TItem>> SelectedItemsChanged { get; set; }
+
+    [Parameter] public RenderFragment? TotalSummary { get; set; }
+    [Parameter] public RenderFragment? GroupSummary { get; set; }
+    [Parameter] public RenderFragment<GridDetailRowTemplateContext>? DetailRowTemplate { get; set; }
+
+    /// <summary>Nut them tren thanh cong cu, sau nhom Them/Sua/Xoa.</summary>
+    [Parameter] public RenderFragment? ToolbarContent { get; set; }
+
+    public TItem? FocusedItem => _focused;
+
+    public IReadOnlyList<TItem> SelectedItems => _selected.OfType<TItem>().ToList();
+
+    private bool CanAdd => AllowAdd ?? (OnAdd.HasDelegate || (EditFormTemplate is not null && OnEditModelSaving.HasDelegate));
+    private bool CanEdit => AllowEdit ?? (OnEdit.HasDelegate || (EditFormTemplate is not null && OnEditModelSaving.HasDelegate));
+    private bool CanDelete => AllowDelete ?? OnDelete.HasDelegate;
+    private string LayoutStorageKey => $"wt-grid-layout:{LayoutKey}";
+
+    protected override void OnInitialized() => Theme.Changed += OnThemeChanged;
+
+    private RenderFragment<GridToolbarTemplateContext> Toolbar => _ => __builder =>
+    {
+        var deleteCount = _selected.Count > 0 ? _selected.Count : (_focused is null ? 0 : 1);
+        <div class="wt-grid-toolbar">
+            @if (Title is not null)
+            {
+                <span class="wt-grid-title">@Title</span>
+            }
+            @if (CanAdd)
+            {
+                <WtButton Variant="primary" Small="true" Icon="plus" Text="@T["Add"]" OnClick="AddAsync" />
+            }
+            @if (CanEdit)
+            {
+                <WtButton Small="true" Icon="edit" Text="@T["Edit"]" Disabled="@(_focused is null)" OnClick="() => EditAsync(_focused)" />
+            }
+            @if (CanDelete)
+            {
+                <WtButton Small="true" Icon="trash" Text="@(deleteCount > 1 ? $"{T["Delete"]} ({deleteCount})" : T["Delete"])" Disabled="@(deleteCount == 0)" OnClick="DeleteSelectedAsync" />
+            }
+            @ToolbarContent
+            <span class="wt-grid-toolbar-spacer"></span>
+            @if (ShowSearchBox)
+            {
+                <DxSearchBox @bind-Text="_searchText" BindValueMode="BindValueMode.OnDelayedInput" InputDelay="350"
+                             NullText="@T["Search"]" CssClass="wt-grid-search" SizeMode="SizeMode.Small" />
+            }
+            @if (OnRefresh.HasDelegate)
+            {
+                <WtButton Variant="ghost" Small="true" Icon="refresh" Title="@T["Refresh"]" OnClick="OnRefresh" />
+            }
+            @if (AllowExport)
+            {
+                <div class="wt-popover-anchor">
+                    <WtButton Variant="ghost" Small="true" Icon="download" Text="@T["Export"]" OnClick="() => _exportOpen = !_exportOpen" />
+                    @if (_exportOpen)
+                    {
+                        <div class="wt-popover-scrim" @onclick="() => _exportOpen = false"></div>
+                        <div class="wt-popover" style="min-width:180px">
+                            <button class="wt-menu-item" @onclick="() => ExportAsync(ExportFormat.Excel)"><WtIcon Name="file" Size="16" /> Excel (.xlsx)</button>
+                            <button class="wt-menu-item" @onclick="() => ExportAsync(ExportFormat.Pdf)"><WtIcon Name="printer" Size="16" /> PDF</button>
+                            <button class="wt-menu-item" @onclick="() => ExportAsync(ExportFormat.Csv)"><WtIcon Name="align" Size="16" /> CSV</button>
+                        </div>
+                    }
+                </div>
+            }
+            <WtButton Variant="ghost" Small="true" Icon="columns" Title="Chọn cột hiển thị" OnClick="() => Grid.ShowColumnChooser()" />
+            @if (LayoutKey is not null)
+            {
+                <WtButton Variant="ghost" Small="true" Icon="sliders" Title="Khôi phục bố cục mặc định" OnClick="ResetLayoutAsync" />
+            }
+        </div>
+    };
+
+    public async Task AddAsync()
+    {
+        if (OnAdd.HasDelegate)
+        {
+            await OnAdd.InvokeAsync();
+        }
+        else
+        {
+            await Grid.StartEditNewRowAsync();
+        }
+    }
+
+    public async Task EditAsync(TItem? item)
+    {
+        if (item is null)
+        {
+            return;
+        }
+        if (OnEdit.HasDelegate)
+        {
+            await OnEdit.InvokeAsync(item);
+        }
+        else if (EditFormTemplate is not null)
+        {
+            await Grid.StartEditDataItemAsync(item);
+        }
+    }
+
+    public async Task DeleteAsync(IReadOnlyList<TItem> items)
+    {
+        if (items.Count == 0 || !OnDelete.HasDelegate)
+        {
+            return;
+        }
+        var what = items.Count == 1 ? "dòng đã chọn" : $"{items.Count} dòng đã chọn";
+        if (!await Dialogs.ConfirmDeleteAsync(what))
+        {
+            return;
+        }
+        await OnDelete.InvokeAsync(items);
+        _selected = [];
+        await SelectedItemsChanged.InvokeAsync([]);
+        Toasts.Success("Đã xóa", $"Đã xóa {items.Count} dòng.");
+    }
+
+    private Task DeleteSelectedAsync()
+    {
+        var items = _selected.Count > 0 ? SelectedItems : _focused is null ? [] : [_focused];
+        return DeleteAsync(items);
+    }
+
+    public enum ExportFormat { Excel, Pdf, Csv }
+
+    public async Task ExportAsync(ExportFormat format)
+    {
+        _exportOpen = false;
+        var file = $"{ExportFileName}-{DateTime.Now:yyyyMMdd-HHmm}";
+        switch (format)
+        {
+            case ExportFormat.Excel:
+                await Grid.ExportToXlsxAsync(file, new GridXlExportOptions { ExportSelectedRowsOnly = false });
+                break;
+            case ExportFormat.Pdf:
+                await Grid.ExportToPdfAsync(file, new GridPdfExportOptions());
+                break;
+            default:
+                await Grid.ExportToCsvAsync(file, new GridCsvExportOptions());
+                break;
+        }
+    }
+
+    /// <summary>Bat che do sua du lieu co san cua DevExpress cho dong dang chon.</summary>
+    private async Task HandleEditModelSaving(GridEditModelSavingEventArgs e)
+    {
+        if (OnEditModelSaving.HasDelegate)
+        {
+            await OnEditModelSaving.InvokeAsync(e);
+            if (!e.Cancel)
+            {
+                Toasts.Success(e.IsNew ? "Đã thêm mới" : "Đã lưu thay đổi");
+            }
+        }
+    }
+
+    private async Task OnSelectedChanged(IReadOnlyList<object> items)
+    {
+        _selected = items;
+        await SelectedItemsChanged.InvokeAsync(SelectedItems);
+    }
+
+    private async Task OnFocusedRowChanged(GridFocusedRowChangedEventArgs e)
+    {
+        var item = e.DataItem is TItem t ? t : default;
+        if (EqualityComparer<TItem?>.Default.Equals(item, _focused))
+        {
+            return;
+        }
+        _focused = item;
+        await FocusedItemChanged.InvokeAsync(_focused);
+    }
+
+    private async Task OnRowDoubleClick(GridRowClickEventArgs e)
+    {
+        if (CanEdit && e.Grid.GetDataItem(e.VisibleIndex) is TItem item)
+        {
+            await EditAsync(item);
+        }
+    }
+
+    private async Task OnLayoutLoading(GridPersistentLayoutEventArgs e)
+    {
+        // Khi prerender chua goi duoc JavaScript; bo cuc se nap o lan render tuong tac.
+        if (LayoutKey is null || !RendererInfo.IsInteractive)
+        {
+            return;
+        }
+        if (_skipLayoutLoad)
+        {
+            _skipLayoutLoad = false;
+            return;
+        }
+        e.Layout = await Js.GetStoredAsync<GridPersistentLayout>(LayoutStorageKey);
+    }
+
+    private async Task OnLayoutSaving(GridPersistentLayoutEventArgs e)
+    {
+        if (LayoutKey is null || !RendererInfo.IsInteractive)
+        {
+            return;
+        }
+        await Js.SetStoredAsync(LayoutStorageKey, e.Layout);
+    }
+
+    private async Task ResetLayoutAsync()
+    {
+        await Js.RemoveStoredAsync(LayoutStorageKey);
+        _skipLayoutLoad = true;
+        _gridKey = Guid.NewGuid();
+        Toasts.Info("Đã khôi phục bố cục mặc định");
+    }
+
+    private void OnThemeChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Theme.Changed -= OnThemeChanged;
+}

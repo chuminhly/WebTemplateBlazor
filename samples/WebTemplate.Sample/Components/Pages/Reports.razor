@@ -1,0 +1,8 @@
+@page "/bao-cao/{Key?}"
+
+@* Toan bo trang bao cao chi can mot dong: danh sach lay tu AddWebTemplateDevExpress(o => o.Reports.Add(...)). *@
+<WtReportPage ReportKey="@Key" BasePath="bao-cao" />
+
+@code {
+    [Parameter] public string? Key { get; set; }
+}

@@ -1,0 +1,33 @@
+@* O chi so KPI cho dashboard. *@
+<div class="wt-card wt-stat">
+    @if (Icon is not null)
+    {
+        <div class="wt-stat-icon"><WtIcon Name="@Icon" Size="20" /></div>
+    }
+    <div style="min-width:0">
+        <div class="wt-stat-label">@Label</div>
+        <div class="wt-stat-value">@Value</div>
+        @if (Change is not null)
+        {
+            <div class="wt-stat-trend @(Change >= 0 ? "is-up" : "is-down")">
+                <WtIcon Name="@(Change >= 0 ? "trending-up" : "trending-down")" Size="14" />
+                @(Change >= 0 ? "+" : "")@WtFormat.Percent(Change)
+                @if (ChangeLabel is not null)
+                {
+                    <span class="wt-muted">@ChangeLabel</span>
+                }
+            </div>
+        }
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+    [Parameter, EditorRequired] public string Value { get; set; } = "";
+    [Parameter] public string? Icon { get; set; }
+    /// <summary>Phan tram tang/giam so voi ky truoc, vd 12.5 hoac -3.</summary>
+    [Parameter] public decimal? Change { get; set; }
+    [Parameter] public string? ChangeLabel { get; set; } = "so với kỳ trước";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

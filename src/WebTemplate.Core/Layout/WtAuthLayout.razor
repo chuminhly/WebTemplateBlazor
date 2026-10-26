@@ -1,0 +1,27 @@
+@inherits LayoutComponentBase
+@using Microsoft.Extensions.Options
+@inject IOptions<WebTemplateOptions> Options
+@inject ThemeService Theme
+
+@* Layout cho trang dang nhap, quen mat khau, dang ky: the o giua man hinh. *@
+<div class="wt-auth">
+    <div class="wt-card wt-auth-card">
+        <div class="wt-auth-brand">
+            <span class="wt-brand-logo">@Options.Value.AppName[..1]</span>
+            <span>@Options.Value.AppName</span>
+        </div>
+        @Body
+    </div>
+</div>
+<WtToastHost />
+<WtDialogHost />
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Theme.InitializeAsync();
+        }
+    }
+}

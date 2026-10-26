@@ -1,0 +1,36 @@
+/* WebTemplate.DevExpress - noi DevExpress Fluent vao giao dien WebTemplate */
+
+/* Luoi nam trong .wt-card: bo vien ngoai, dung font chung */
+.wt-dx-grid { font-family: var(--wt-font); }
+.wt-card > .wt-dx-grid,
+.wt-card-body.is-flush > .wt-dx-grid { border: 0 !important; border-radius: 0; }
+
+.wt-grid-toolbar {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+    width: 100%; padding: 2px 0;
+}
+.wt-grid-toolbar-spacer { flex: 1; }
+.wt-grid-title { font-weight: 600; margin-right: 8px; }
+.wt-grid-search { width: 240px; max-width: 100%; }
+
+/* Dong dang chon: nen nhat theo theme thay vi to dam ca dong */
+.wt-dx-grid tr.dxbl-grid-focused-row > td {
+    background-color: var(--wt-primary-soft-2) !important;
+    color: var(--wt-text) !important;
+}
+.wt-dx-grid tr.dxbl-grid-focused-row > td a { color: var(--wt-primary-text); }
+.wt-dx-grid tr.dxbl-grid-focused-row > td .wt-btn-ghost { color: var(--wt-text-muted); }
+
+/* Trang bao cao */
+.wt-report-layout { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: var(--wt-gap); align-items: start; }
+.wt-report-layout.is-full { grid-template-columns: 1fr; }
+@media (max-width: 1100px) { .wt-report-layout { grid-template-columns: 1fr; } }
+.wt-report-group { padding: 12px 16px 4px; font-size: .72rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--wt-text-subtle); }
+.wt-report-link { display: flex; align-items: center; gap: 10px; padding: 8px 16px; color: var(--wt-text); border-left: 3px solid transparent; }
+.wt-report-link:hover { background: var(--wt-primary-soft); text-decoration: none; }
+.wt-report-link.active { background: var(--wt-primary-soft-2); color: var(--wt-primary-text); border-left-color: var(--wt-primary); font-weight: 600; }
+.wt-report-viewer { width: 100%; }
+.wt-report-viewer > * { height: 100%; }
+
+/* Popup sua du lieu cua luoi: rong hon mac dinh de form 2 cot de doc */
+.wt-grid-popup { width: min(760px, 95vw) !important; max-width: 95vw; }

@@ -1,0 +1,41 @@
+@using global::DevExpress.Blazor.Reporting
+@using global::DevExpress.XtraReports.UI
+@inject IReportCatalog Catalog
+@inject IServiceProvider Services
+
+@*
+    Trinh xem bao cao DevExpress (in, xuat PDF/Excel/Word, nhap tham so).
+    <WtReportViewer ReportKey="doanh-thu" />  hoac  <WtReportViewer Report="myReport" />
+*@
+<div class="wt-report-viewer" style="height:@Height">
+    @if (_report is not null)
+    {
+        <DxReportViewer @key="_report" Report="_report" />
+    }
+    else
+    {
+        <WtEmptyState Icon="file" Title="Không tìm thấy báo cáo" Description="@($"Mã báo cáo '{ReportKey}' chưa được đăng ký trong AddWebTemplateDevExpress(o => o.Reports.Add(...)).")" />
+    }
+</div>
+
+@code {
+    private XtraReport? _report;
+    private string? _loadedKey;
+
+    [Parameter] public XtraReport? Report { get; set; }
+    [Parameter] public string? ReportKey { get; set; }
+    [Parameter] public string Height { get; set; } = "calc(100vh - 200px)";
+
+    protected override void OnParametersSet()
+    {
+        if (Report is not null)
+        {
+            _report = Report;
+        }
+        else if (ReportKey != _loadedKey)
+        {
+            _loadedKey = ReportKey;
+            _report = ReportKey is null ? null : Catalog.Create(ReportKey, Services);
+        }
+    }
+}

@@ -1,0 +1,10 @@
+@using Microsoft.Extensions.Options
+@inject IOptions<WebTemplateOptions> Options
+@*
+    Dat trong <head> cua App.razor:
+        <WtThemeStyles />
+    Nap CSS cua thu vien, bien mau cua tat ca theme va script ap theme da luu truoc khi trang hien thi.
+*@
+<link rel="stylesheet" href="_content/WebTemplate.Core/css/webtemplate.css" />
+<style>@((MarkupString)ThemeCss.Generate(Options.Value.Themes))</style>
+<script src="_content/WebTemplate.Core/js/theme-init.js"></script>

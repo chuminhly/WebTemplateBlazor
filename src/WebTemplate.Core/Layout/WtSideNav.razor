@@ -1,0 +1,113 @@
+@implements IDisposable
+@inject NavigationManager Nav
+
+<nav class="wt-nav">
+    <ul>
+        @foreach (var item in Visible(Items))
+        {
+            @RenderItem(item)
+        }
+    </ul>
+</nav>
+
+@code {
+    private readonly HashSet<MenuItem> _open = [];
+    private System.Security.Claims.ClaimsPrincipal? _user;
+
+    [Parameter, EditorRequired] public IReadOnlyList<MenuItem> Items { get; set; } = [];
+
+    /// <summary>Tu dong co khi app bat xac thuc (CascadingAuthenticationState).</summary>
+    [CascadingParameter] private Task<Microsoft.AspNetCore.Components.Authorization.AuthenticationState>? AuthState { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _user = AuthState is null ? null : (await AuthState).User;
+        OpenActiveGroups();
+    }
+
+    protected override void OnInitialized() => Nav.LocationChanged += OnLocationChanged;
+
+    private RenderFragment RenderItem(MenuItem item) => __builder =>
+    {
+        if (item.IsSection)
+        {
+            <li class="wt-nav-section">@item.Title</li>
+        }
+        else if (item.Children.Count > 0)
+        {
+            var open = _open.Contains(item);
+            <li class="wt-nav-group @(open ? "is-open" : null)">
+                <button type="button" class="wt-nav-link @(IsActive(item) ? "active" : null)" title="@item.Title" aria-expanded="@open" @onclick="() => Toggle(item)">
+                    <WtIcon Name="@(item.Icon ?? "layers")" />
+                    <span class="wt-nav-text">@item.Title</span>
+                    <WtIcon Name="chevron-right" Size="14" Class="wt-nav-chevron" />
+                </button>
+                @if (open)
+                {
+                    <ul class="wt-nav-children">
+                        @foreach (var child in Visible(item.Children))
+                        {
+                            @RenderItem(child)
+                        }
+                    </ul>
+                }
+            </li>
+        }
+        else
+        {
+            <li>
+                <NavLink class="wt-nav-link" href="@item.Href" Match="item.Match" title="@item.Title">
+                    @if (item.Icon is not null)
+                    {
+                        <WtIcon Name="@item.Icon" />
+                    }
+                    <span class="wt-nav-text">@item.Title</span>
+                    @if (!string.IsNullOrEmpty(item.Badge))
+                    {
+                        <span class="wt-nav-badge">@item.Badge</span>
+                    }
+                </NavLink>
+            </li>
+        }
+    };
+
+    private IEnumerable<MenuItem> Visible(IEnumerable<MenuItem> items) =>
+        items.Where(i => i.Roles is not { Length: > 0 } || _user is null || i.Roles.Any(_user.IsInRole));
+
+    private void Toggle(MenuItem item)
+    {
+        if (!_open.Remove(item))
+        {
+            _open.Add(item);
+        }
+    }
+
+    private bool IsActive(MenuItem item)
+    {
+        var path = "/" + Nav.ToBaseRelativePath(Nav.Uri).Split('?', '#')[0];
+        return MenuItem.Flatten(item.Children).Any(p =>
+        {
+            var href = p[^1].Href;
+            return href is not null && path.StartsWith("/" + href.TrimStart('/'), StringComparison.OrdinalIgnoreCase) && href.Trim('/').Length > 0;
+        });
+    }
+
+    private void OpenActiveGroups()
+    {
+        foreach (var path in MenuItem.Flatten(Items))
+        {
+            if (path[^1].Children.Count > 0 && IsActive(path[^1]))
+            {
+                _open.Add(path[^1]);
+            }
+        }
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        OpenActiveGroups();
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose() => Nav.LocationChanged -= OnLocationChanged;
+}

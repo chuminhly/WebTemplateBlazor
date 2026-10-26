@@ -1,0 +1,41 @@
+@using Microsoft.Extensions.Options
+@inject IOptions<WebTemplateOptions> Options
+@inject WtText T
+
+<PageTitle>@Title · @Options.Value.AppName</PageTitle>
+<div class="wt-page-header">
+    <div style="min-width:0">
+        @if (ShowBreadcrumb)
+        {
+            <WtBreadcrumb Current="@BreadcrumbCurrent" />
+        }
+        <div class="wt-row" style="flex-wrap:nowrap">
+            @if (BackHref is not null)
+            {
+                <WtButton Variant="ghost" Icon="arrow-left" Title="@T["Back"]" Href="@BackHref" />
+            }
+            <h1 class="wt-page-title">@Title</h1>
+            @TitleSuffix
+        </div>
+        @if (Subtitle is not null)
+        {
+            <div class="wt-page-subtitle">@Subtitle</div>
+        }
+    </div>
+    @if (Actions is not null)
+    {
+        <div class="wt-page-actions">@Actions</div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public RenderFragment? Actions { get; set; }
+    /// <summary>Noi dung canh tieu de, vd nhan trang thai.</summary>
+    [Parameter] public RenderFragment? TitleSuffix { get; set; }
+    [Parameter] public string? BackHref { get; set; }
+    [Parameter] public bool ShowBreadcrumb { get; set; } = true;
+    /// <summary>Muc cuoi cua breadcrumb (vd ten ban ghi).</summary>
+    [Parameter] public string? BreadcrumbCurrent { get; set; }
+}

@@ -1,0 +1,80 @@
+@implements IDisposable
+@inject ThemeService Theme
+@inject WtText T
+
+@* Nut bang mau tren thanh tren: chon theme, sang/toi, mat do, co chu. *@
+<div class="wt-popover-anchor">
+    <button class="wt-btn wt-btn-ghost wt-btn-icon" title="@T["Appearance"]" aria-haspopup="true" aria-expanded="@_open" @onclick="() => _open = !_open">
+        <WtIcon Name="palette" />
+    </button>
+    @if (_open)
+    {
+        <div class="wt-popover-scrim" @onclick="() => _open = false"></div>
+        <div class="wt-popover wt-theme-panel" role="dialog" aria-label="@T["Appearance"]">
+            @if (Theme.AllowUserSelection)
+            {
+                <section>
+                    <h4>@T["ThemeColor"]</h4>
+                    <div class="wt-swatches">
+                        @foreach (var theme in Theme.Themes)
+                        {
+                            var active = theme.Key == Theme.Current.ThemeKey;
+                            <button class="wt-swatch @(active ? "is-active" : null)" style="--swatch:@theme.PrimaryFor(Theme.IsDark)"
+                                    title="@theme.Name" aria-pressed="@active" @onclick="() => Theme.SetThemeAsync(theme.Key)">
+                                @if (active)
+                                {
+                                    <WtIcon Name="check" Size="16" StrokeWidth="3" />
+                                }
+                            </button>
+                        }
+                    </div>
+                    <div class="wt-theme-name">@Theme.CurrentTheme.Name · @Theme.CurrentTheme.Description</div>
+                </section>
+            }
+            <section>
+                <h4>@T["Mode"]</h4>
+                <div class="wt-segmented">
+                    @ModeButton(ThemeMode.Light, "sun", T["Light"])
+                    @ModeButton(ThemeMode.Dark, "moon", T["Dark"])
+                    @ModeButton(ThemeMode.System, "monitor", T["System"])
+                </div>
+            </section>
+            <section>
+                <h4>@T["Density"]</h4>
+                <div class="wt-segmented">
+                    <button class="@(Theme.Current.Density == UiDensity.Comfortable ? "is-active" : null)" @onclick="() => Theme.SetDensityAsync(UiDensity.Comfortable)">@T["Comfortable"]</button>
+                    <button class="@(Theme.Current.Density == UiDensity.Compact ? "is-active" : null)" @onclick="() => Theme.SetDensityAsync(UiDensity.Compact)">@T["Compact"]</button>
+                </div>
+            </section>
+            <section>
+                <h4>@T["FontSize"]</h4>
+                <div class="wt-segmented">
+                    @foreach (var scale in ThemePreferences.FontScales)
+                    {
+                        <button class="@(Theme.Current.FontScale == scale ? "is-active" : null)" @onclick="() => Theme.SetFontScaleAsync(scale)">@(scale)%</button>
+                    }
+                </div>
+            </section>
+            <section>
+                <button class="wt-btn wt-btn-ghost wt-btn-sm wt-btn-block" @onclick="Theme.ResetAsync">
+                    <WtIcon Name="refresh" Size="14" /> @T["Reset"]
+                </button>
+            </section>
+        </div>
+    }
+</div>
+
+@code {
+    private bool _open;
+
+    private RenderFragment ModeButton(ThemeMode mode, string icon, string text) =>
+        @<button class="@(Theme.Current.Mode == mode ? "is-active" : null)" @onclick="() => Theme.SetModeAsync(mode)">
+            <WtIcon Name="@icon" Size="15" /> @text
+        </button>;
+
+    protected override void OnInitialized() => Theme.Changed += OnChanged;
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Theme.Changed -= OnChanged;
+}

@@ -1,0 +1,26 @@
+@implements IDisposable
+@inject ThemeService Theme
+
+@* Luoi the xem truoc tat ca theme - dung cho trang "Cai dat giao dien". *@
+<div class="wt-theme-cards">
+    @foreach (var theme in Theme.Themes)
+    {
+        var active = theme.Key == Theme.Current.ThemeKey;
+        <button class="wt-theme-card @(active ? "is-active" : null)" style="--swatch:@theme.PrimaryFor(Theme.IsDark)"
+                disabled="@(!Theme.AllowUserSelection)" @onclick="() => Theme.SetThemeAsync(theme.Key)">
+            <div class="wt-theme-card-preview"><i></i><i></i></div>
+            <div class="wt-theme-card-body">
+                <strong>@theme.Name @if (active) { <WtIcon Name="check" Size="14" /> }</strong>
+                <small>@theme.Description</small>
+            </div>
+        </button>
+    }
+</div>
+
+@code {
+    protected override void OnInitialized() => Theme.Changed += OnChanged;
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Theme.Changed -= OnChanged;
+}

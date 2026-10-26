@@ -1,0 +1,11 @@
+@page "/Error"
+@using System.Diagnostics
+
+<PageTitle>Đã xảy ra lỗi</PageTitle>
+<WtErrorPage Code="500" Detail="@(RequestId is null ? null : $"Mã yêu cầu: {RequestId}")" />
+
+@code {
+    [CascadingParameter] private HttpContext? HttpContext { get; set; }
+
+    private string? RequestId => Activity.Current?.Id ?? HttpContext?.TraceIdentifier;
+}

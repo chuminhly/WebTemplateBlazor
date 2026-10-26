@@ -1,0 +1,18 @@
+@* Nhan trang thai mau. Tone: primary | success | warning | danger | info | neutral. *@
+<span class="wt-badge @(Tone == "neutral" ? null : "wt-badge-" + Tone) @(Dot ? null : "is-plain")">
+    @if (Text is not null)
+    {
+        @Text
+    }
+    else
+    {
+        @ChildContent
+    }
+</span>
+
+@code {
+    [Parameter] public string? Text { get; set; }
+    [Parameter] public string Tone { get; set; } = "neutral";
+    [Parameter] public bool Dot { get; set; } = true;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

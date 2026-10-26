@@ -1,0 +1,20 @@
+@page "/"
+
+<WtDashboardPage Title="Tổng quan" Subtitle="Trang chủ của ứng dụng">
+    <Kpis>
+        <WtStatCard Label="Chỉ số 1" Value="0" Icon="trending-up" />
+        <WtStatCard Label="Chỉ số 2" Value="0" Icon="users" />
+        <WtStatCard Label="Chỉ số 3" Value="0" Icon="cart" />
+        <WtStatCard Label="Chỉ số 4" Value="0" Icon="dollar" />
+    </Kpis>
+    <Main>
+        <WtCard Title="Bắt đầu">
+            <p>Dự án đã nối sẵn bộ template WebTemplate. Bấm biểu tượng bảng màu ở góc phải trên để đổi theme.</p>
+            <ul>
+                <li>Khai báo menu trong <code>Program.cs</code> (<code>o.AddMenu(...)</code>).</li>
+                <li>Trang danh sách: xem <code>Components/Pages/Catalog.razor</code> (WtListPage + WtGrid).</li>
+                <li>Báo cáo: kế thừa <code>BaseCompanyReport</code> rồi đăng ký trong <code>AddWebTemplateDevExpress</code>.</li>
+            </ul>
+        </WtCard>
+    </Main>
+</WtDashboardPage>

@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/samples/">
+    <Project Path="samples/WebTemplate.Sample/WebTemplate.Sample.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/WebTemplate.Core/WebTemplate.Core.csproj" />
+    <Project Path="src/WebTemplate.DevExpress/WebTemplate.DevExpress.csproj" />
+  </Folder>
+  <Folder Name="/templates/">
+    <Project Path="templates/WebTemplate.Templates/WebTemplate.Templates.csproj" />
+  </Folder>
+</Solution>

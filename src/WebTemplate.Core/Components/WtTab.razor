@@ -1,0 +1,18 @@
+@implements IDisposable
+
+@if (Parent?.Active == this)
+{
+    <div class="wt-tab-panel" role="tabpanel">@ChildContent</div>
+}
+
+@code {
+    [CascadingParameter] private WtTabs? Parent { get; set; }
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public string? Icon { get; set; }
+    [Parameter] public string? Badge { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    protected override void OnInitialized() => Parent?.Register(this);
+
+    public void Dispose() => Parent?.Unregister(this);
+}

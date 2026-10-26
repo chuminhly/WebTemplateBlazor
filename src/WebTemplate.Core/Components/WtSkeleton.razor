@@ -1,0 +1,11 @@
+@* Khung xuong gia lap noi dung khi dang tai. *@
+<div aria-busy="true">
+    @for (var i = 0; i < Lines; i++)
+    {
+        <span class="wt-skeleton" style="width:@(i == Lines - 1 ? "60%" : "100%")"></span>
+    }
+</div>
+
+@code {
+    [Parameter] public int Lines { get; set; } = 3;
+}

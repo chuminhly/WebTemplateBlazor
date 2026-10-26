@@ -1,0 +1,105 @@
+@page "/"
+@inject SampleDataService Data
+@inject NavigationManager Nav
+@inject WebTemplate.Core.Theming.ThemeService Theme
+@implements IDisposable
+
+<WtDashboardPage Title="Tổng quan" Subtitle="@($"Số liệu kinh doanh đến ngày {DateTime.Today:dd/MM/yyyy}")">
+    <Actions>
+        <WtButton Icon="download" Text="Báo cáo doanh thu" Href="bao-cao/doanh-thu-thang" />
+        <WtButton Variant="primary" Icon="plus" Text="Tạo đơn hàng" Href="don-hang/tao-moi" />
+    </Actions>
+    <Kpis>
+        <WtStatCard Label="Doanh thu tháng này" Value="@WtFormat.MoneyShort(_thisMonth.Revenue)" Icon="dollar" Change="@Change(_thisMonth.Revenue, _lastMonth.Revenue)" />
+        <WtStatCard Label="Lợi nhuận tháng này" Value="@WtFormat.MoneyShort(_thisMonth.Profit)" Icon="trending-up" Change="@Change(_thisMonth.Profit, _lastMonth.Profit)" />
+        <WtStatCard Label="Đơn hàng đang xử lý" Value="@_processing.ToString()" Icon="cart" ChangeLabel="@null" />
+        <WtStatCard Label="Khách hàng đang giao dịch" Value="@_activeCustomers.ToString()" Icon="users" />
+    </Kpis>
+    <Main>
+        <WtCard Title="Doanh thu và chi phí 12 tháng" Subtitle="Đơn vị: đồng">
+            <DxChart Data="_sales" Height="320px" Width="100%" Palette="WtChartPalette.For(Theme)">
+                <DxChartBarSeries Name="Doanh thu" ArgumentField="@((MonthlySales s) => s.Month)" ValueField="@((MonthlySales s) => s.Revenue)" />
+                <DxChartBarSeries Name="Chi phí" ArgumentField="@((MonthlySales s) => s.Month)" ValueField="@((MonthlySales s) => s.Cost)" />
+                <DxChartLineSeries Name="Lợi nhuận" ArgumentField="@((MonthlySales s) => s.Month)" ValueField="@((MonthlySales s) => s.Profit)" />
+                <DxChartLegend Position="RelativePosition.Outside" HorizontalAlignment="HorizontalAlignment.Center" VerticalAlignment="VerticalEdge.Bottom" />
+                <DxChartTooltip Enabled="true">
+                    <div style="padding:6px 10px">@context.Point.SeriesName: <b>@WtFormat.Money((decimal)context.Point.Value)</b></div>
+                </DxChartTooltip>
+            </DxChart>
+        </WtCard>
+        <WtCard Title="Đơn hàng gần đây" Flush="true">
+            <HeaderActions><WtButton Variant="ghost" Small="true" Text="Xem tất cả" Href="don-hang" /></HeaderActions>
+            <ChildContent>
+                <WtGrid TItem="Order" Data="_recent" KeyFieldName="Id" PageSize="6" ShowSearchBox="false" ShowToolbar="false" AllowSelection="false" FocusedRowEnabled="false"
+                        OnEdit="@(o => Nav.NavigateTo($"don-hang/{o.Id}/sua"))" AllowEdit="true">
+                    <Columns>
+                        <DxGridDataColumn FieldName="Code" Caption="Mã đơn" Width="140px" />
+                        <DxGridDataColumn FieldName="CustomerName" Caption="Khách hàng" />
+                        <WtDateColumn FieldName="OrderDate" Caption="Ngày" />
+                        <WtStatusColumn FieldName="Status" Caption="Trạng thái" Tones="SampleDataService.OrderStatusTones" />
+                        <WtMoneyColumn FieldName="Total" Caption="Giá trị" />
+                    </Columns>
+                </WtGrid>
+            </ChildContent>
+        </WtCard>
+    </Main>
+    <Side>
+        <WtCard Title="Khách hàng doanh thu cao">
+            @foreach (var c in _top)
+            {
+                <a href="@($"khach-hang/{c.Id}")" class="wt-row" style="flex-wrap:nowrap;padding:8px 0;border-bottom:1px solid var(--wt-border);color:inherit;text-decoration:none">
+                    <span class="wt-avatar">@c.Name.Split(' ')[^1][..1]</span>
+                    <span style="flex:1;min-width:0">
+                        <div style="font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">@c.Name</div>
+                        <small class="wt-muted">@c.City</small>
+                    </span>
+                    <strong class="wt-nowrap">@WtFormat.MoneyShort(c.Revenue)</strong>
+                </a>
+            }
+        </WtCard>
+        <WtCard Title="Tỷ trọng theo trạng thái đơn">
+            <DxPieChart Data="_byStatus" Height="260px" InnerDiameter="0.6" Palette="WtChartPalette.For(Theme)">
+                <DxPieChartSeries ArgumentField="@((StatusCount s) => s.Status)" ValueField="@((StatusCount s) => s.Count)" />
+                <DxChartLegend Position="RelativePosition.Outside" HorizontalAlignment="HorizontalAlignment.Center" VerticalAlignment="VerticalEdge.Bottom" />
+            </DxPieChart>
+        </WtCard>
+    </Side>
+</WtDashboardPage>
+
+@code {
+    private record StatusCount(string Status, int Count);
+
+    private IReadOnlyList<MonthlySales> _sales = [];
+    private MonthlySales _thisMonth = default!, _lastMonth = default!;
+    private IReadOnlyList<Order> _recent = [];
+    private IReadOnlyList<Customer> _top = [];
+    private List<StatusCount> _byStatus = [];
+    private int _processing, _activeCustomers;
+
+    protected override void OnInitialized()
+    {
+        _sales = Data.GetMonthlySales();
+        _thisMonth = _sales[^1];
+        _lastMonth = _sales[^2];
+        var orders = Data.GetOrders();
+        _recent = orders.Take(12).ToList();
+        _processing = orders.Count(o => o.Status is "Mới" or "Đang xử lý" or "Đang giao");
+        _activeCustomers = Data.GetCustomers().Count(c => c.Status == "Đang giao dịch");
+        _top = Data.GetCustomers().OrderByDescending(c => c.Revenue).Take(6).ToList();
+        _byStatus = orders.GroupBy(o => o.Status).Select(g => new StatusCount(g.Key, g.Count())).ToList();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            Theme.Changed += OnThemeChanged;
+        }
+    }
+
+    private void OnThemeChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Theme.Changed -= OnThemeChanged;
+
+    private static decimal? Change(decimal now, decimal before) => before == 0 ? null : Math.Round((now - before) / before * 100, 1);
+}
