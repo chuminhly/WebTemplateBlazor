@@ -1,0 +1,7 @@
+@page "/bao-cao/{Key?}"
+
+<WtReportPage ReportKey="@Key" BasePath="bao-cao" />
+
+@code {
+    [Parameter] public string? Key { get; set; }
+}

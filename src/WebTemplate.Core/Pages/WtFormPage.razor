@@ -1,0 +1,98 @@
+@typeparam TModel where TModel : class
+@inject DialogService Dialogs
+@inject WtText T
+
+@*
+    Mau trang them/sua: form chia nhom (WtFormSection), kiem tra du lieu, nut Luu/Huy dinh duoi,
+    canh bao khi roi trang ma chua luu.
+*@
+<div class="wt-page">
+    <WtPageHeader Title="@Title" Subtitle="@Subtitle" BackHref="@CancelHref" Actions="Actions" />
+
+    <EditForm EditContext="_editContext" OnValidSubmit="HandleValidSubmit" class="wt-card">
+        @if (Validator is not null)
+        {
+            @Validator
+        }
+        else
+        {
+            <DataAnnotationsValidator />
+        }
+        <div class="wt-card-body">
+            @if (ShowValidationSummary)
+            {
+                <ValidationSummary />
+            }
+            @ChildContent
+            <div class="wt-form-actions">
+                @if (CancelHref is not null)
+                {
+                    <WtButton Text="@T["Cancel"]" Href="@CancelHref" />
+                }
+                @ExtraButtons
+                <WtButton Type="submit" Variant="primary" Icon="save" Text="@(SaveText ?? T["Save"])" Loading="_saving" />
+            </div>
+        </div>
+    </EditForm>
+</div>
+
+<NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="IsDirty" />
+
+@code {
+    private EditContext _editContext = default!;
+    private TModel? _boundModel;
+    private bool _saving;
+    private bool _saved;
+
+    [Parameter, EditorRequired] public TModel Model { get; set; } = default!;
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public RenderFragment? Actions { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    /// <summary>Nut them canh nut Luu (vd "Luu va them moi").</summary>
+    [Parameter] public RenderFragment? ExtraButtons { get; set; }
+    /// <summary>Thay bo kiem tra mac dinh (DataAnnotations), vd FluentValidation.</summary>
+    [Parameter] public RenderFragment? Validator { get; set; }
+    [Parameter] public string? SaveText { get; set; }
+    [Parameter] public string? CancelHref { get; set; }
+    [Parameter] public bool ShowValidationSummary { get; set; }
+    /// <summary>Canh bao khi roi trang ma chua luu (mac dinh bat).</summary>
+    [Parameter] public bool WarnOnUnsavedChanges { get; set; } = true;
+    /// <summary>Goi khi du lieu hop le va nguoi dung bam Luu.</summary>
+    [Parameter] public EventCallback<TModel> OnSave { get; set; }
+
+    private bool IsDirty => WarnOnUnsavedChanges && !_saved && _editContext.IsModified();
+
+    protected override void OnParametersSet()
+    {
+        if (!ReferenceEquals(_boundModel, Model))
+        {
+            _boundModel = Model;
+            _editContext = new EditContext(Model);
+            _saved = false;
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        _saving = true;
+        try
+        {
+            await OnSave.InvokeAsync(Model);
+            _saved = true;
+            _editContext.MarkAsUnmodified();
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private async Task ConfirmLeave(LocationChangingContext context)
+    {
+        if (IsDirty && !await Dialogs.ConfirmAsync(T["Cancel"], T["UnsavedChanges"]))
+        {
+            context.PreventNavigation();
+        }
+    }
+}

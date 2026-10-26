@@ -1,0 +1,13 @@
+@inherits LayoutComponentBase
+@using Microsoft.Extensions.Options
+@inject IOptions<WebTemplateOptions> Options
+
+@*
+    Layout mac dinh cho app co dung DevExpress (= WtMainLayout + dong bo theme DevExpress):
+        @layout WebTemplate.DevExpress.Layout.WtDxMainLayout
+*@
+<WtAppShell>
+    <Footer>@Options.Value.FooterText · @Options.Value.Company.Name</Footer>
+    <ChildContent>@Body</ChildContent>
+</WtAppShell>
+<WtDxThemeSync />

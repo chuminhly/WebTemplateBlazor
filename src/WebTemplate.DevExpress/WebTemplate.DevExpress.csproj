@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <RootNamespace>WebTemplate.DevExpress</RootNamespace>
+    <PackageId>WebTemplate.DevExpress</PackageId>
+    <Description>Luoi, report, form DevExpress dung chung va dong bo theme WebTemplate voi DevExpress Fluent.</Description>
+    <PackageTags>blazor;devexpress;grid;reporting;template</PackageTags>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="DevExpress.Blazor" Version="$(DevExpressVersion)" />
+    <PackageReference Include="DevExpress.Blazor.Reporting.Viewer" Version="$(DevExpressVersion)" />
+    <!-- Ve report/xuat PDF khi chay tren Linux, Docker (Windows khong can nhung khong anh huong) -->
+    <PackageReference Include="DevExpress.Drawing.Skia" Version="$(DevExpressVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WebTemplate.Core\WebTemplate.Core.csproj" />
+  </ItemGroup>
+
+</Project>

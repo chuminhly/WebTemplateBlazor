@@ -1,0 +1,71 @@
+@using Microsoft.Extensions.Options
+@implements IDisposable
+@inject NavigationManager Nav
+@inject IOptions<WebTemplateOptions> Options
+@inject WtText T
+
+@if (Crumbs.Count > 0)
+{
+    <nav class="wt-breadcrumb" aria-label="breadcrumb">
+        <a href=""><WtIcon Name="home" Size="14" /></a>
+        @foreach (var (title, href) in Crumbs)
+        {
+            <WtIcon Name="chevron-right" Size="12" />
+            @if (href is null)
+            {
+                <span>@title</span>
+            }
+            else
+            {
+                <a href="@href">@title</a>
+            }
+        }
+    </nav>
+}
+
+@code {
+    /// <summary>Tu khai bao duong dan; bo trong thi tu suy ra tu menu theo URL hien tai.</summary>
+    [Parameter] public IReadOnlyList<(string Title, string? Href)>? Items { get; set; }
+
+    /// <summary>Muc cuoi them vao sau duong dan suy ra (vd ten ban ghi dang xem).</summary>
+    [Parameter] public string? Current { get; set; }
+
+    private List<(string Title, string? Href)> Crumbs = [];
+
+    protected override void OnInitialized() => Nav.LocationChanged += OnLocationChanged;
+
+    protected override void OnParametersSet() => Build();
+
+    private void Build()
+    {
+        if (Items is not null)
+        {
+            Crumbs = [.. Items];
+            return;
+        }
+
+        var path = "/" + Nav.ToBaseRelativePath(Nav.Uri).Split('?', '#')[0].TrimEnd('/');
+        var best = MenuItem.Flatten(Options.Value.Menu)
+            .Where(p => p[^1].Href is { } h && h.Trim('/').Length > 0 && path.StartsWith("/" + h.Trim('/'), StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(p => p[^1].Href!.Length)
+            .FirstOrDefault();
+
+        Crumbs = best?.Where(m => !m.IsSection).Select(m => (m.Title, m.Href)).ToList() ?? [];
+        if (!string.IsNullOrEmpty(Current))
+        {
+            Crumbs.Add((Current, null));
+        }
+        else if (Crumbs.Count > 0)
+        {
+            Crumbs[^1] = (Crumbs[^1].Title, null);
+        }
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        Build();
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose() => Nav.LocationChanged -= OnLocationChanged;
+}

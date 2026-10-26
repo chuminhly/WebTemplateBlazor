@@ -1,0 +1,16 @@
+@inject WtText T
+
+@if (Overlay)
+{
+    <div class="wt-loading-overlay"><div class="wt-spinner"></div></div>
+}
+else
+{
+    <div class="wt-loading"><div class="wt-spinner"></div><span>@(Text ?? T["Loading"])</span></div>
+}
+
+@code {
+    [Parameter] public string? Text { get; set; }
+    /// <summary>Phu len vung cha (cha can class <c>wt-relative</c>).</summary>
+    [Parameter] public bool Overlay { get; set; }
+}

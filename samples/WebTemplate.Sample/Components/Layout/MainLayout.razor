@@ -1,0 +1,25 @@
+@inherits LayoutComponentBase
+@inject ToastService Toasts
+
+@*
+    Layout cua app: dung khung WtAppShell cua thu vien, them chuong thong bao va menu tai khoan.
+    App khong can tuy bien gi thi co the dung thang WebTemplate.DevExpress.Layout.WtDxMainLayout.
+*@
+<WtAppShell OnSearch="Search" SearchPlaceholder="Tìm khách hàng, đơn hàng...">
+    <TopBarContent>
+        <WtButton Variant="ghost" Icon="bell" Title="Thông báo" OnClick="@(() => Toasts.Info("Bạn có 3 đơn hàng mới", "Đơn DH2610-0158 vừa được tạo."))" />
+    </TopBarContent>
+    <UserMenu>
+        <WtUserMenu UserName="Nguyễn Văn An" Role="Quản trị viên" LogoutHref="dang-nhap">
+            <a class="wt-menu-item" href="giao-dien"><WtIcon Name="palette" Size="16" /> Giao diện</a>
+            <a class="wt-menu-item" href="khach-hang"><WtIcon Name="user" Size="16" /> Hồ sơ cá nhân</a>
+        </WtUserMenu>
+    </UserMenu>
+    <Footer>© @DateTime.Now.Year WebTemplate · Công ty TNHH Phần mềm Mẫu</Footer>
+    <ChildContent>@Body</ChildContent>
+</WtAppShell>
+<WtDxThemeSync />
+
+@code {
+    private void Search(string text) => Toasts.Info("Tìm kiếm", $"Bạn vừa tìm: \"{text}\" (trang mẫu chưa nối tìm kiếm thật).");
+}

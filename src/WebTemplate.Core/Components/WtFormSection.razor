@@ -1,0 +1,19 @@
+@* Nhom truong trong form: tieu de + mo ta ben trai, cac truong ben phai. *@
+<div class="wt-form-section">
+    <div>
+        <div class="wt-form-section-title">@Title</div>
+        @if (Description is not null)
+        {
+            <div class="wt-form-section-desc">@Description</div>
+        }
+    </div>
+    <div class="wt-grid @(Columns > 1 ? $"wt-cols-{Columns}" : null)">@ChildContent</div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public string? Description { get; set; }
+    /// <summary>So cot cho cac truong (1-4).</summary>
+    [Parameter] public int Columns { get; set; } = 2;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

@@ -1,0 +1,45 @@
+@page "/dang-nhap"
+@layout WtAuthLayout
+@inject NavigationManager Nav
+@inject ToastService Toasts
+
+@* Vi du WtAuthLayout. Du an that noi vao ASP.NET Core Identity / SSO. *@
+<PageTitle>Đăng nhập</PageTitle>
+<h1 style="font-size:1.35rem;margin-bottom:4px">Đăng nhập</h1>
+<p class="wt-muted">Chào mừng bạn quay lại. Đăng nhập để tiếp tục.</p>
+
+<EditForm Model="_model" OnValidSubmit="Submit" class="wt-stack" style="margin-top:16px">
+    <DataAnnotationsValidator />
+    <WtField Label="Tên đăng nhập" For="() => _model.UserName">
+        <DxTextBox @bind-Text="_model.UserName" NullText="vd: nguyenvanan" />
+    </WtField>
+    <WtField Label="Mật khẩu" For="() => _model.Password">
+        <DxTextBox @bind-Text="_model.Password" Password="true" />
+    </WtField>
+    <div class="wt-row" style="justify-content:space-between">
+        <DxCheckBox @bind-Checked="_model.Remember">Ghi nhớ đăng nhập</DxCheckBox>
+        <a href="dang-nhap">Quên mật khẩu?</a>
+    </div>
+    <WtButton Type="submit" Variant="primary" Class="wt-btn-block" Text="Đăng nhập" />
+</EditForm>
+
+@code {
+    private readonly LoginModel _model = new();
+
+    private void Submit()
+    {
+        Toasts.Success("Đăng nhập thành công", $"Xin chào {_model.UserName}!");
+        Nav.NavigateTo("");
+    }
+
+    private sealed class LoginModel
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Nhập tên đăng nhập")]
+        public string UserName { get; set; } = "";
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Nhập mật khẩu")]
+        public string Password { get; set; } = "";
+
+        public bool Remember { get; set; }
+    }
+}

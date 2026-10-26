@@ -1,0 +1,22 @@
+@inject WtText T
+
+<div class="wt-empty">
+    <div class="wt-empty-icon"><WtIcon Name="@Icon" Size="26" /></div>
+    <div class="wt-empty-title">@(Title ?? T["NoData"])</div>
+    @if (Description is not null)
+    {
+        <div>@Description</div>
+    }
+    @if (ChildContent is not null)
+    {
+        <div class="wt-row" style="margin-top:8px">@ChildContent</div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Icon { get; set; } = "inbox";
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Description { get; set; }
+    /// <summary>Nut hanh dong, vd "Them moi".</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

@@ -1,0 +1,134 @@
+@using Microsoft.Extensions.Options
+@implements IDisposable
+@inject LayoutState LayoutState
+@inject ThemeService Theme
+@inject IOptions<WebTemplateOptions> Options
+@inject NavigationManager Nav
+@inject WtText T
+
+@*
+    Khung ung dung: menu trai + thanh tren + noi dung + chan trang.
+    Thuong dung qua WtMainLayout; dung truc tiep khi can tuy bien thanh tren.
+*@
+<div class="wt-shell @(LayoutState.SidebarCollapsed ? "is-collapsed" : null) @(LayoutState.MobileMenuOpen ? "is-mobile-open" : null)">
+    <aside class="wt-sidebar" aria-label="Menu chính">
+        <a class="wt-brand" href="">
+            <span class="wt-brand-logo">
+                @if (!string.IsNullOrEmpty(Options.Value.LogoUrl))
+                {
+                    <img src="@Options.Value.LogoUrl" alt="" />
+                }
+                else
+                {
+                    @Initial
+                }
+            </span>
+            <span class="wt-brand-name">@Options.Value.AppName</span>
+        </a>
+        <WtSideNav Items="@(Menu ?? Options.Value.Menu)" />
+        @if (SidebarFooter is not null)
+        {
+            <div class="wt-sidebar-footer">@SidebarFooter</div>
+        }
+    </aside>
+
+    <div class="wt-backdrop" @onclick="() => LayoutState.SetMobileMenu(false)"></div>
+
+    <header class="wt-topbar">
+        <button class="wt-btn wt-btn-ghost wt-btn-icon wt-only-desktop" title="@T["ToggleMenu"]" @onclick="LayoutState.ToggleSidebarAsync">
+            <WtIcon Name="sidebar" />
+        </button>
+        <button class="wt-btn wt-btn-ghost wt-btn-icon wt-only-mobile" title="@T["ToggleMenu"]" @onclick="() => LayoutState.SetMobileMenu(true)">
+            <WtIcon Name="menu" />
+        </button>
+
+        @if (OnSearch.HasDelegate)
+        {
+            <label class="wt-topbar-search">
+                <WtIcon Name="search" Size="16" />
+                <input type="search" placeholder="@(SearchPlaceholder ?? T["Search"])" @bind="_search" @onkeydown="SearchKeyDown" />
+            </label>
+        }
+
+        <div class="wt-topbar-spacer"></div>
+        <div class="wt-topbar-actions">
+            @TopBarContent
+            <WtThemeSwitcher />
+            @UserMenu
+        </div>
+    </header>
+
+    <main class="wt-main">
+        <div class="wt-content">
+            <WtErrorBoundary>
+                @ChildContent
+            </WtErrorBoundary>
+        </div>
+        @if (Footer is not null)
+        {
+            <footer class="wt-footer">@Footer</footer>
+        }
+    </main>
+</div>
+
+<WtToastHost />
+<WtDialogHost />
+
+@code {
+    private string _search = "";
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Menu rieng; mac dinh lay tu <see cref="WebTemplateOptions.Menu"/>.</summary>
+    [Parameter] public IReadOnlyList<MenuItem>? Menu { get; set; }
+
+    /// <summary>Noi dung them vao thanh tren, ben trai bo chon theme (vd chuong thong bao).</summary>
+    [Parameter] public RenderFragment? TopBarContent { get; set; }
+
+    /// <summary>Menu tai khoan o goc phai, vd <c>&lt;WtUserMenu&gt;</c>.</summary>
+    [Parameter] public RenderFragment? UserMenu { get; set; }
+
+    [Parameter] public RenderFragment? SidebarFooter { get; set; }
+
+    [Parameter] public RenderFragment? Footer { get; set; }
+
+    /// <summary>Gan de hien o tim kiem nhanh tren thanh tren; nhan Enter se goi callback.</summary>
+    [Parameter] public EventCallback<string> OnSearch { get; set; }
+
+    [Parameter] public string? SearchPlaceholder { get; set; }
+
+    private string Initial => string.IsNullOrWhiteSpace(Options.Value.AppName) ? "W" : Options.Value.AppName.Trim()[..1].ToUpperInvariant();
+
+    protected override void OnInitialized()
+    {
+        LayoutState.Changed += OnStateChanged;
+        Nav.LocationChanged += OnLocationChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Theme.InitializeAsync();
+            await LayoutState.LoadAsync();
+        }
+    }
+
+    private async Task SearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await OnSearch.InvokeAsync(_search);
+        }
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e) => LayoutState.SetMobileMenu(false);
+
+    private void OnStateChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        LayoutState.Changed -= OnStateChanged;
+        Nav.LocationChanged -= OnLocationChanged;
+    }
+}

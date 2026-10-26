@@ -1,0 +1,13 @@
+@* Cot tien te VND, canh phai: 1.234.567 ₫ *@
+<DxGridDataColumn FieldName="@FieldName" Caption="@Caption" Width="@Width" MinWidth="MinWidth"
+                  DisplayFormat="@(ShowSymbol ? WtFormat.MoneyFormat : "#,##0")"
+                  TextAlignment="GridTextAlignment.Right" Visible="Visible" />
+
+@code {
+    [Parameter, EditorRequired] public string FieldName { get; set; } = "";
+    [Parameter] public string? Caption { get; set; }
+    [Parameter] public string? Width { get; set; } = "140px";
+    [Parameter] public int MinWidth { get; set; } = 90;
+    [Parameter] public bool ShowSymbol { get; set; } = true;
+    [Parameter] public bool Visible { get; set; } = true;
+}

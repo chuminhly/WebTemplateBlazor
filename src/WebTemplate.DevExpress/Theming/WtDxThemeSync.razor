@@ -1,0 +1,33 @@
+@implements IDisposable
+@inject ThemeService Theme
+@inject IThemeChangeService ThemeChange
+
+@*
+    Doi theme DevExpress ngay khi nguoi dung doi theme WebTemplate.
+    WtDxMainLayout da co san; neu tu viet layout thi dat <WtDxThemeSync /> mot lan trong layout.
+*@
+
+@code {
+    private string? _applied;
+
+    protected override void OnInitialized()
+    {
+        _applied = Key();
+        Theme.Changed += OnThemeChanged;
+    }
+
+    private string Key() => $"{Theme.CurrentTheme.Key}|{Theme.IsDark}";
+
+    private void OnThemeChanged()
+    {
+        var key = Key();
+        if (key == _applied)
+        {
+            return;
+        }
+        _applied = key;
+        _ = InvokeAsync(() => ThemeChange.SetTheme(DxThemeFactory.Create(Theme.CurrentTheme, Theme.IsDark)));
+    }
+
+    public void Dispose() => Theme.Changed -= OnThemeChanged;
+}

@@ -1,0 +1,31 @@
+@*
+    Mau trang chinh - chi tiet: luoi chinh o tren, luoi/noi dung chi tiet cua dong dang chon o duoi.
+*@
+<div class="wt-page">
+    <WtPageHeader Title="@Title" Subtitle="@Subtitle" Actions="Actions" />
+    <div class="wt-master-detail">
+        <WtCard Title="@MasterTitle" Flush="true">@Master</WtCard>
+        <WtCard Title="@DetailTitle" Flush="@HasSelection">
+            @if (HasSelection)
+            {
+                @Detail
+            }
+            else
+            {
+                <WtEmptyState Icon="layers" Title="@EmptyDetailText" />
+            }
+        </WtCard>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public RenderFragment? Actions { get; set; }
+    [Parameter] public string? MasterTitle { get; set; }
+    [Parameter] public RenderFragment? Master { get; set; }
+    [Parameter] public string? DetailTitle { get; set; }
+    [Parameter] public RenderFragment? Detail { get; set; }
+    [Parameter] public bool HasSelection { get; set; }
+    [Parameter] public string EmptyDetailText { get; set; } = "Chọn một dòng ở bảng trên để xem chi tiết";
+}

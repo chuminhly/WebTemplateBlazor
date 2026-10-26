@@ -1,0 +1,32 @@
+@*
+    Mau trang tong quan: hang o KPI, vung chinh (bieu do) + cot phu, noi dung them ben duoi.
+*@
+<div class="wt-page">
+    <WtPageHeader Title="@Title" Subtitle="@Subtitle" Actions="Actions" ShowBreadcrumb="false" />
+    @if (Kpis is not null)
+    {
+        <div class="wt-grid wt-cols-4">@Kpis</div>
+    }
+    @if (Main is not null || Side is not null)
+    {
+        <div class="@(Side is not null ? "wt-dashboard-layout" : "wt-stack")">
+            <div class="wt-stack">@Main</div>
+            @if (Side is not null)
+            {
+                <div class="wt-stack">@Side</div>
+            }
+        </div>
+    }
+    @ChildContent
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public RenderFragment? Actions { get; set; }
+    /// <summary>Cac WtStatCard.</summary>
+    [Parameter] public RenderFragment? Kpis { get; set; }
+    [Parameter] public RenderFragment? Main { get; set; }
+    [Parameter] public RenderFragment? Side { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

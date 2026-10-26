@@ -1,0 +1,88 @@
+@page "/khach-hang/{Id:int}"
+@inject SampleDataService Data
+@inject NavigationManager Nav
+@inject DialogService Dialogs
+@inject ToastService Toasts
+
+@* Vi du WtDetailPage: the tom tat, tab noi dung, cot phu. *@
+@if (_customer is null)
+{
+    <WtErrorPage Code="404" Title="Không tìm thấy khách hàng" Message="Khách hàng này không tồn tại hoặc đã bị xóa." />
+}
+else
+{
+    <WtDetailPage Title="@_customer.Name" Subtitle="@($"{_customer.Code} · Khách hàng từ {_customer.CreatedAt:dd/MM/yyyy}")" BackHref="khach-hang">
+        <Status><WtStatusBadge Text="@_customer.Status" Tone="@SampleDataService.CustomerStatusTones[_customer.Status]" /></Status>
+        <Actions>
+            <WtButton Icon="plus" Text="Tạo đơn hàng" Href="don-hang/tao-moi" />
+            <WtButton Variant="danger" Icon="trash" Text="Xóa" OnClick="DeleteAsync" />
+        </Actions>
+        <Summary>
+            <div class="wt-props">
+                <WtProp Label="Điện thoại" Value="@_customer.Phone" />
+                <WtProp Label="Email" Value="@_customer.Email" />
+                <WtProp Label="Tỉnh/thành" Value="@_customer.City" />
+                <WtProp Label="Nhóm" Value="@_customer.Segment" />
+                <WtProp Label="Tổng doanh thu" Value="@WtFormat.Money(_customer.Revenue)" />
+                <WtProp Label="Số đơn hàng" Value="@_orders.Count.ToString()" />
+            </div>
+        </Summary>
+        <ChildContent>
+            <WtTabs>
+                <WtTab Title="Đơn hàng" Icon="cart" Badge="@_orders.Count.ToString()">
+                    <WtGrid TItem="Order" Data="_orders" KeyFieldName="Id" PageSize="10" AllowSelection="false" ExportFileName="@($"don-hang-{_customer.Code}")"
+                            OnEdit="@(o => Nav.NavigateTo($"don-hang/{o.Id}/sua"))">
+                        <Columns>
+                            <DxGridDataColumn FieldName="Code" Caption="Mã đơn" Width="140px" />
+                            <WtDateColumn FieldName="OrderDate" Caption="Ngày đặt" />
+                            <WtStatusColumn FieldName="Status" Caption="Trạng thái" Tones="SampleDataService.OrderStatusTones" />
+                            <WtMoneyColumn FieldName="Total" Caption="Giá trị" />
+                        </Columns>
+                    </WtGrid>
+                </WtTab>
+                <WtTab Title="Ghi chú" Icon="file">
+                    @if (string.IsNullOrEmpty(_customer.Note))
+                    {
+                        <WtEmptyState Icon="file" Title="Chưa có ghi chú" Description="Ghi chú về khách hàng sẽ hiển thị tại đây." />
+                    }
+                    else
+                    {
+                        <p>@_customer.Note</p>
+                    }
+                </WtTab>
+            </WtTabs>
+        </ChildContent>
+        <Side>
+            <WtCard Title="Liên hệ nhanh">
+                <div class="wt-stack" style="gap:10px">
+                    <div class="wt-row"><WtIcon Name="phone" Size="16" /> @_customer.Phone</div>
+                    <div class="wt-row"><WtIcon Name="mail" Size="16" /> @_customer.Email</div>
+                    <div class="wt-row"><WtIcon Name="map-pin" Size="16" /> @_customer.City</div>
+                </div>
+            </WtCard>
+        </Side>
+    </WtDetailPage>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private Customer? _customer;
+    private IReadOnlyList<Order> _orders = [];
+
+    protected override void OnParametersSet()
+    {
+        _customer = Data.GetCustomer(Id);
+        _orders = Data.GetOrdersOf(Id);
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (await Dialogs.ConfirmDeleteAsync($"khách hàng \"{_customer!.Name}\""))
+        {
+            Data.DeleteCustomers([_customer.Id]);
+            Toasts.Success("Đã xóa khách hàng", _customer.Name);
+            Nav.NavigateTo("khach-hang");
+        }
+    }
+}

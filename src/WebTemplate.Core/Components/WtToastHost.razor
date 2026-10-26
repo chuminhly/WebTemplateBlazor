@@ -1,0 +1,36 @@
+@implements IDisposable
+@inject ToastService Toasts
+@inject WtText T
+
+<div class="wt-toasts" role="status" aria-live="polite">
+    @foreach (var toast in Toasts.Items)
+    {
+        <div class="wt-toast is-@toast.Level.ToString().ToLowerInvariant()" @key="toast.Id">
+            <span class="wt-toast-icon"><WtIcon Name="@IconFor(toast.Level)" /></span>
+            <div class="wt-toast-body">
+                <div class="wt-toast-title">@toast.Title</div>
+                @if (toast.Message is not null)
+                {
+                    <div class="wt-toast-message">@toast.Message</div>
+                }
+            </div>
+            <button class="wt-btn wt-btn-ghost wt-btn-icon wt-btn-sm" title="@T["Close"]" @onclick="() => Toasts.Dismiss(toast.Id)"><WtIcon Name="x" Size="14" /></button>
+        </div>
+    }
+</div>
+
+@code {
+    private static string IconFor(ToastLevel level) => level switch
+    {
+        ToastLevel.Success => "check-circle",
+        ToastLevel.Warning => "alert",
+        ToastLevel.Error => "x-circle",
+        _ => "info",
+    };
+
+    protected override void OnInitialized() => Toasts.Changed += OnChanged;
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Toasts.Changed -= OnChanged;
+}

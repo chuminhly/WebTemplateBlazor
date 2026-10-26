@@ -1,0 +1,12 @@
+@* Cot ngay dd/MM/yyyy (hoac kem gio). *@
+<DxGridDataColumn FieldName="@FieldName" Caption="@Caption" Width="@Width"
+                  DisplayFormat="@(WithTime ? WtFormat.DateTimeFormat : WtFormat.DateFormat)"
+                  TextAlignment="GridTextAlignment.Center" Visible="Visible" />
+
+@code {
+    [Parameter, EditorRequired] public string FieldName { get; set; } = "";
+    [Parameter] public string? Caption { get; set; }
+    [Parameter] public string? Width { get; set; } = "120px";
+    [Parameter] public bool WithTime { get; set; }
+    [Parameter] public bool Visible { get; set; } = true;
+}

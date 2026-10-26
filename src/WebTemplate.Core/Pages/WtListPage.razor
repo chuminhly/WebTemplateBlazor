@@ -1,0 +1,40 @@
+@*
+    Mau trang danh sach: tieu de + nut hanh dong, thanh loc, luoi du lieu, panel chi tiet ben phai (tuy chon).
+    <WtListPage Title="Khach hang" Actions="..." Filters="...">
+        <WtGrid ... />
+    </WtListPage>
+*@
+<div class="wt-page">
+    <WtPageHeader Title="@Title" Subtitle="@Subtitle" Actions="Actions" />
+
+    @if (Filters is not null)
+    {
+        <div class="wt-card"><div class="wt-filter-bar">@Filters</div></div>
+    }
+
+    <div class="wt-list-layout @(ShowDetail && DetailPanel is not null ? "has-detail" : null)">
+        <div class="wt-card" style="overflow:hidden">@ChildContent</div>
+        @if (ShowDetail && DetailPanel is not null)
+        {
+            <WtCard Title="@DetailTitle" Class="wt-detail-panel">
+                <HeaderActions>
+                    <WtButton Variant="ghost" Small="true" Icon="x" OnClick="OnCloseDetail" />
+                </HeaderActions>
+                <ChildContent>@DetailPanel</ChildContent>
+            </WtCard>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public RenderFragment? Actions { get; set; }
+    [Parameter] public RenderFragment? Filters { get; set; }
+    /// <summary>Noi dung chinh, thuong la WtGrid.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? DetailPanel { get; set; }
+    [Parameter] public string? DetailTitle { get; set; }
+    [Parameter] public bool ShowDetail { get; set; }
+    [Parameter] public EventCallback OnCloseDetail { get; set; }
+}

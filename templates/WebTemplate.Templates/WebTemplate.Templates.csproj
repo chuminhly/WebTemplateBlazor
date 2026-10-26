@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageType>Template</PackageType>
+    <PackageId>WebTemplate.Templates</PackageId>
+    <Title>WebTemplate - mau du an Blazor + DevExpress</Title>
+    <Description>Tao du an Blazor (.NET 10) da noi san WebTemplate.Core va WebTemplate.DevExpress: dotnet new webtemplate-app -n TenDuAn</Description>
+    <PackageTags>dotnet-new;templates;blazor;devexpress</PackageTags>
+    <IncludeContentInPack>true</IncludeContentInPack>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <ContentTargetFolders>content</ContentTargetFolders>
+    <NoDefaultExcludes>true</NoDefaultExcludes>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="content\**\*" Exclude="content\**\bin\**;content\**\obj\**" />
+  </ItemGroup>
+
+</Project>

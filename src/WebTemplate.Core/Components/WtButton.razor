@@ -1,0 +1,51 @@
+@* Nut bam theo theme. Variant: primary | secondary | ghost | danger. *@
+@if (Href is not null)
+{
+    <a class="@CssClass" href="@Href" title="@Title" @attributes="AdditionalAttributes">@Inner</a>
+}
+else
+{
+    <button type="@Type" class="@CssClass" title="@Title" disabled="@(Disabled || Loading)" @onclick="OnClick" @attributes="AdditionalAttributes">@Inner</button>
+}
+
+@code {
+    [Parameter] public string Variant { get; set; } = "secondary";
+    [Parameter] public string? Icon { get; set; }
+    [Parameter] public string? Text { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Href { get; set; }
+    [Parameter] public string Type { get; set; } = "button";
+    [Parameter] public bool Small { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    /// <summary>Hien vong quay va khoa nut khi dang xu ly.</summary>
+    [Parameter] public bool Loading { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public EventCallback<MouseEventArgs> OnClick { get; set; }
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private bool IconOnly => Text is null && ChildContent is null;
+
+    private string CssClass => string.Join(' ', new[]
+    {
+        "wt-btn",
+        Variant == "secondary" ? null : $"wt-btn-{Variant}",
+        Small ? "wt-btn-sm" : null,
+        IconOnly ? "wt-btn-icon" : null,
+        Class,
+    }.Where(c => c is not null));
+
+    private RenderFragment Inner => __builder =>
+    {
+        if (Loading)
+        {
+            <span class="wt-spinner" style="width:14px;height:14px;border-width:2px"></span>
+        }
+        else if (Icon is not null)
+        {
+            <WtIcon Name="@Icon" Size="@(Small ? 14 : 16)" />
+        }
+        @Text
+        @ChildContent
+    };
+}

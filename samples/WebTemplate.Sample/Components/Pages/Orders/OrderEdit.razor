@@ -1,0 +1,106 @@
+@page "/don-hang/tao-moi"
+@page "/don-hang/{Id:int}/sua"
+@inject SampleDataService Data
+@inject NavigationManager Nav
+@inject ToastService Toasts
+
+@* Vi du WtFormPage: form chia nhom, kiem tra du lieu, nut Luu/Huy dinh duoi, canh bao khi roi trang chua luu. *@
+<WtFormPage TModel="Order" Model="_order" Title="@(Id is null ? "Tạo đơn hàng" : $"Sửa đơn {_order.Code}")"
+            Subtitle="Các trường có dấu * là bắt buộc" CancelHref="don-hang" OnSave="Save">
+    <WtFormSection Title="Thông tin chung" Description="Khách hàng, ngày đặt và trạng thái đơn hàng." Columns="2">
+        <WtField Label="Khách hàng" Required="true" For="() => _order.CustomerId">
+            <DxComboBox Data="_customers" TextFieldName="@nameof(Customer.Name)" ValueFieldName="@nameof(Customer.Id)"
+                        @bind-Value="_order.CustomerId" SearchMode="ListSearchMode.AutoSearch" NullText="Chọn khách hàng..." />
+        </WtField>
+        <WtField Label="Trạng thái">
+            <DxComboBox Data="SampleDataService.OrderStatuses" @bind-Value="_order.Status" />
+        </WtField>
+        <WtField Label="Ngày đặt" Required="true" For="() => _order.OrderDate">
+            <DxDateEdit @bind-Date="_order.OrderDate" DisplayFormat="dd/MM/yyyy" />
+        </WtField>
+        <WtField Label="Ngày giao dự kiến" Hint="Để trống nếu chưa hẹn ngày giao">
+            <DxDateEdit @bind-Date="_order.DeliveryDate" DisplayFormat="dd/MM/yyyy" ClearButtonDisplayMode="DataEditorClearButtonDisplayMode.Auto" />
+        </WtField>
+        <WtField Label="Ghi chú" Span="true">
+            <DxMemo @bind-Text="_order.Note" Rows="2" />
+        </WtField>
+    </WtFormSection>
+
+    <WtFormSection Title="Hàng hóa" Description="Thêm sản phẩm, số lượng; thành tiền tự tính." Columns="1">
+        <div class="wt-stack" style="gap:10px">
+            @foreach (var line in _order.Lines)
+            {
+                <div class="wt-grid" style="grid-template-columns:minmax(0,3fr) minmax(0,1fr) minmax(0,1.4fr) minmax(0,1.4fr) auto;align-items:end">
+                    <WtField Label="Sản phẩm">
+                        <DxComboBox Data="_products" TextFieldName="@nameof(Product.Name)" ValueFieldName="@nameof(Product.Id)"
+                                    Value="line.ProductId" ValueExpression="() => line.ProductId" ValueChanged="(int id) => PickProduct(line, id)" />
+                    </WtField>
+                    <WtField Label="Số lượng"><DxSpinEdit @bind-Value="line.Quantity" MinValue="1" /></WtField>
+                    <WtField Label="Đơn giá"><DxSpinEdit @bind-Value="line.UnitPrice" DisplayFormat="#,##0" MinValue="0" Increment="1000" /></WtField>
+                    <WtField Label="Thành tiền"><div class="wt-input" style="display:flex;align-items:center;justify-content:flex-end;background:var(--wt-surface-2)">@WtFormat.Money(line.Amount)</div></WtField>
+                    <WtButton Variant="ghost" Icon="trash" Title="Xóa dòng" OnClick="() => _order.Lines.Remove(line)" />
+                </div>
+            }
+            <div class="wt-row" style="justify-content:space-between">
+                <WtButton Icon="plus" Text="Thêm dòng hàng" OnClick="AddLine" />
+                <div style="font-size:1.1rem">Tổng cộng: <strong>@WtFormat.Money(_order.Total)</strong></div>
+            </div>
+        </div>
+    </WtFormSection>
+</WtFormPage>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private Order _order = new();
+    private IReadOnlyList<Customer> _customers = [];
+    private IReadOnlyList<Product> _products = [];
+
+    protected override void OnParametersSet()
+    {
+        _customers = Data.GetCustomers();
+        _products = Data.GetProducts();
+        if (Id is { } id && Data.GetOrder(id) is { } existing)
+        {
+            // Sua tren ban sao de nut Huy khong lam thay doi du lieu goc.
+            _order = new Order
+            {
+                Id = existing.Id, Code = existing.Code, CustomerId = existing.CustomerId, OrderDate = existing.OrderDate,
+                DeliveryDate = existing.DeliveryDate, Status = existing.Status, Note = existing.Note, City = existing.City,
+                Lines = existing.Lines.Select(l => new OrderLine { ProductId = l.ProductId, ProductName = l.ProductName, Unit = l.Unit, Quantity = l.Quantity, UnitPrice = l.UnitPrice }).ToList(),
+            };
+        }
+        else
+        {
+            _order = new Order();
+            AddLine();
+        }
+    }
+
+    private void AddLine()
+    {
+        var p = _products[0];
+        _order.Lines.Add(new OrderLine { ProductId = p.Id, ProductName = p.Name, Unit = p.Unit, UnitPrice = p.Price });
+    }
+
+    private void PickProduct(OrderLine line, int productId)
+    {
+        var p = _products.First(x => x.Id == productId);
+        line.ProductId = p.Id;
+        line.ProductName = p.Name;
+        line.Unit = p.Unit;
+        line.UnitPrice = p.Price;
+    }
+
+    private void Save(Order order)
+    {
+        if (order.Lines.Count == 0)
+        {
+            Toasts.Warning("Chưa có hàng hóa", "Thêm ít nhất một dòng hàng trước khi lưu.");
+            return;
+        }
+        Data.SaveOrder(order);
+        Toasts.Success(Id is null ? "Đã tạo đơn hàng" : "Đã lưu đơn hàng", order.Code);
+        Nav.NavigateTo("don-hang");
+    }
+}

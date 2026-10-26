@@ -1,0 +1,18 @@
+@* Cot trang thai hien dang nhan mau. Tones: gia tri -> tone (success, warning, danger, info, primary, neutral). *@
+<DxGridDataColumn FieldName="@FieldName" Caption="@Caption" Width="@Width" TextAlignment="GridTextAlignment.Left" Visible="Visible">
+    <CellDisplayTemplate>
+        @{
+            var text = context.DisplayText;
+            var key = context.Value?.ToString() ?? "";
+        }
+        <WtStatusBadge Text="@text" Tone="@(Tones?.GetValueOrDefault(key) ?? "neutral")" />
+    </CellDisplayTemplate>
+</DxGridDataColumn>
+
+@code {
+    [Parameter, EditorRequired] public string FieldName { get; set; } = "";
+    [Parameter] public string? Caption { get; set; }
+    [Parameter] public string? Width { get; set; } = "150px";
+    [Parameter] public IReadOnlyDictionary<string, string>? Tones { get; set; }
+    [Parameter] public bool Visible { get; set; } = true;
+}

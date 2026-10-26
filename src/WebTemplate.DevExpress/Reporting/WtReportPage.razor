@@ -1,0 +1,66 @@
+@inject IReportCatalog Catalog
+@inject NavigationManager Nav
+
+@*
+    Mau trang bao cao: danh sach bao cao theo nhom ben trai + trinh xem ben phai.
+    Trong app chi can mot trang:
+        @page "/bao-cao/{Key?}"
+        <WtReportPage ReportKey="@Key" BasePath="bao-cao" />
+*@
+<div class="wt-page">
+    <WtPageHeader Title="@(Entry?.Title ?? Title)" Subtitle="@(Entry?.Description ?? Subtitle)" BreadcrumbCurrent="@Entry?.Title" Actions="Actions" />
+
+    <div class="wt-report-layout @(ShowList ? null : "is-full")">
+        @if (ShowList)
+        {
+            <WtCard Title="Danh sách báo cáo" Flush="true">
+                @foreach (var group in Visible.GroupBy(e => e.Group))
+                {
+                    <div class="wt-report-group">@group.Key</div>
+                    @foreach (var e in group)
+                    {
+                        <a class="wt-report-link @(e == Entry ? "active" : null)" href="@($"{BasePath.TrimEnd('/')}/{e.Key}")">
+                            <WtIcon Name="file" Size="16" />
+                            <span>@e.Title</span>
+                        </a>
+                    }
+                }
+            </WtCard>
+        }
+        <div class="wt-card" style="overflow:hidden">
+            @if (Entry is not null)
+            {
+                <WtReportViewer ReportKey="@Entry.Key" Height="@ViewerHeight" />
+            }
+            else
+            {
+                <WtEmptyState Icon="pie" Title="Chọn một báo cáo" Description="Chọn báo cáo ở danh sách bên trái để xem, in hoặc xuất file." />
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string? ReportKey { get; set; }
+    /// <summary>Duong dan cua trang bao cao, dung de tao link, vd "bao-cao".</summary>
+    [Parameter] public string BasePath { get; set; } = "bao-cao";
+    [Parameter] public string Title { get; set; } = "Báo cáo";
+    [Parameter] public string? Subtitle { get; set; } = "Xem, in và xuất báo cáo";
+    [Parameter] public bool ShowList { get; set; } = true;
+    [Parameter] public string ViewerHeight { get; set; } = "calc(100vh - 210px)";
+    [Parameter] public RenderFragment? Actions { get; set; }
+
+    [CascadingParameter] private Task<Microsoft.AspNetCore.Components.Authorization.AuthenticationState>? AuthState { get; set; }
+
+    private System.Security.Claims.ClaimsPrincipal? _user;
+
+    private ReportEntry? Entry => ReportKey is null ? null : Visible.FirstOrDefault(e => string.Equals(e.Key, ReportKey, StringComparison.OrdinalIgnoreCase));
+
+    private IEnumerable<ReportEntry> Visible =>
+        Catalog.Entries.Where(e => e.Roles is not { Length: > 0 } || _user is null || e.Roles.Any(_user.IsInRole));
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _user = AuthState is null ? null : (await AuthState).User;
+    }
+}

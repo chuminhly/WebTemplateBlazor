@@ -1,0 +1,28 @@
+@using System.Linq.Expressions
+@* Nhan + o nhap + goi y + loi kiem tra cho mot truong form. *@
+<div class="wt-field @(Span ? "wt-span-all" : null)">
+    @if (Label is not null)
+    {
+        <label class="wt-label">@Label@if (Required) { <span class="wt-required">*</span> }</label>
+    }
+    @ChildContent
+    @if (Hint is not null)
+    {
+        <span class="wt-hint">@Hint</span>
+    }
+    @if (For is not null)
+    {
+        <ValidationMessage For="For" />
+    }
+</div>
+
+@code {
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string? Hint { get; set; }
+    [Parameter] public bool Required { get; set; }
+    /// <summary>Chiem het chieu ngang cua nhom.</summary>
+    [Parameter] public bool Span { get; set; }
+    /// <summary>Truong de hien loi kiem tra, vd <c>For="() =&gt; Model.Name"</c>.</summary>
+    [Parameter] public Expression<Func<object?>>? For { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

@@ -1,0 +1,59 @@
+@page "/danh-muc"
+
+@* Trang danh sach mau: thay SampleItem bang model va service that cua du an. *@
+<WtListPage Title="Danh mục mẫu" Subtitle="Ví dụ trang danh sách có thêm/sửa/xóa">
+    <WtGrid TItem="SampleItem" Data="_items" KeyFieldName="Id" LayoutKey="danh-muc" ExportFileName="danh-muc"
+            EditFormTemplate="EditForm" OnEditModelSaving="Save" OnDelete="Delete">
+        <Columns>
+            <DxGridDataColumn FieldName="Code" Caption="Mã" Width="120px" />
+            <DxGridDataColumn FieldName="Name" Caption="Tên" />
+            <WtMoneyColumn FieldName="Amount" Caption="Giá trị" />
+            <WtDateColumn FieldName="CreatedAt" Caption="Ngày tạo" />
+        </Columns>
+    </WtGrid>
+</WtListPage>
+
+@code {
+    public class SampleItem
+    {
+        public int Id { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Nhập mã")] public string Code { get; set; } = "";
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Nhập tên")] public string Name { get; set; } = "";
+        public decimal Amount { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.Today;
+    }
+
+    private List<SampleItem> _items = Enumerable.Range(1, 25)
+        .Select(i => new SampleItem { Id = i, Code = $"MA{i:000}", Name = $"Mục mẫu {i}", Amount = i * 125_000, CreatedAt = DateTime.Today.AddDays(-i) })
+        .ToList();
+
+    private RenderFragment<GridEditFormTemplateContext> EditForm => ctx =>
+    {
+        var item = (SampleItem)ctx.EditModel;
+        return @<DxFormLayout CaptionPosition="CaptionPosition.Vertical">
+            <DxFormLayoutItem Caption="Mã" ColSpanMd="4"><DxTextBox @bind-Text="item.Code" /></DxFormLayoutItem>
+            <DxFormLayoutItem Caption="Tên" ColSpanMd="8"><DxTextBox @bind-Text="item.Name" /></DxFormLayoutItem>
+            <DxFormLayoutItem Caption="Giá trị" ColSpanMd="6"><DxSpinEdit @bind-Value="item.Amount" DisplayFormat="#,##0" /></DxFormLayoutItem>
+            <DxFormLayoutItem Caption="Ngày tạo" ColSpanMd="6"><DxDateEdit @bind-Date="item.CreatedAt" DisplayFormat="dd/MM/yyyy" /></DxFormLayoutItem>
+        </DxFormLayout>;
+    };
+
+    private void Save(GridEditModelSavingEventArgs e)
+    {
+        var model = (SampleItem)e.EditModel;
+        if (e.IsNew)
+        {
+            model.Id = _items.Count == 0 ? 1 : _items.Max(i => i.Id) + 1;
+            _items.Insert(0, model);
+        }
+        else
+        {
+            var index = _items.IndexOf((SampleItem)e.DataItem);
+            model.Id = ((SampleItem)e.DataItem).Id;
+            _items[index] = model;
+        }
+        _items = [.. _items];
+    }
+
+    private void Delete(IReadOnlyList<SampleItem> items) => _items = _items.Except(items).ToList();
+}

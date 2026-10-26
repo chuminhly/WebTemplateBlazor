@@ -1,0 +1,11 @@
+@inherits LayoutComponentBase
+
+@* Khung chung cua thu vien. Them chuong thong bao, menu tai khoan... vao TopBarContent / UserMenu. *@
+<WtAppShell>
+    <UserMenu>
+        <WtUserMenu UserName="Người dùng" Role="Quản trị viên" />
+    </UserMenu>
+    <Footer>© @DateTime.Now.Year __COMPANY__</Footer>
+    <ChildContent>@Body</ChildContent>
+</WtAppShell>
+<WtDxThemeSync />
